@@ -32,7 +32,7 @@ const options = {
             name: { type: 'string', example: 'John Doe' },
             email: { type: 'string', format: 'email', example: 'john@printinghouse.com' },
             password: { type: 'string', minLength: 6, example: 'secret123' },
-            role: { type: 'string', enum: ['ADMIN', 'STAFF', 'CUSTOMER'], example: 'STAFF' },
+            role: { type: 'string', enum: ['ADMIN', 'SUPERVISOR', 'STAFF', 'CUSTOMER'], example: 'STAFF' },
           },
         },
         ChangePasswordRequest: {
@@ -50,10 +50,20 @@ const options = {
             id: { type: 'string', format: 'uuid' },
             name: { type: 'string', example: 'John Doe' },
             email: { type: 'string', format: 'email' },
-            role: { type: 'string', enum: ['ADMIN', 'STAFF', 'CUSTOMER'] },
+            role: { type: 'string', enum: ['ADMIN', 'SUPERVISOR', 'STAFF', 'CUSTOMER'] },
             isActive: { type: 'boolean' },
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        CreateUserRequest: {
+          type: 'object',
+          required: ['name', 'email', 'password'],
+          properties: {
+            name: { type: 'string', example: 'Jane Doe' },
+            email: { type: 'string', format: 'email', example: 'jane@printinghouse.com' },
+            password: { type: 'string', minLength: 6, example: 'secret123' },
+            role: { type: 'string', enum: ['ADMIN', 'SUPERVISOR', 'STAFF', 'CUSTOMER'], example: 'STAFF' },
           },
         },
         UpdateUserRequest: {
@@ -61,7 +71,7 @@ const options = {
           properties: {
             name: { type: 'string', example: 'Jane Doe' },
             email: { type: 'string', format: 'email' },
-            role: { type: 'string', enum: ['ADMIN', 'STAFF', 'CUSTOMER'] },
+            role: { type: 'string', enum: ['ADMIN', 'SUPERVISOR', 'STAFF', 'CUSTOMER'] },
             isActive: { type: 'boolean' },
           },
         },
@@ -283,13 +293,29 @@ const options = {
             { in: 'query', name: 'page', schema: { type: 'integer', default: 1 } },
             { in: 'query', name: 'limit', schema: { type: 'integer', default: 10 } },
             { in: 'query', name: 'search', schema: { type: 'string' }, description: 'Search by name or email' },
-            { in: 'query', name: 'role', schema: { type: 'string', enum: ['ADMIN', 'STAFF', 'CUSTOMER'] } },
+            { in: 'query', name: 'role', schema: { type: 'string', enum: ['ADMIN', 'SUPERVISOR', 'STAFF', 'CUSTOMER'] } },
           ],
           responses: {
             200: {
               description: 'Paginated list of users',
               content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/PaginatedResponse' }, { type: 'object', properties: { data: { type: 'array', items: { $ref: '#/components/schemas/User' } } } }] } } },
             },
+            401: { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          },
+        },
+        post: {
+          tags: ['Users'],
+          summary: 'Create a new user (Admin only)',
+          requestBody: {
+            required: true,
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/CreateUserRequest' } } },
+          },
+          responses: {
+            201: {
+              description: 'User created successfully',
+              content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/SuccessResponse' }, { type: 'object', properties: { data: { $ref: '#/components/schemas/User' } } }] } } },
+            },
+            409: { description: 'Email already in use', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
             401: { description: 'Unauthorized', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
           },
         },

@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Sync Swagger on Code Changes",
+  "description": "Reminds the agent to update src/config/swagger.js whenever controllers, routes, or validations are modified",
+  "version": "1",
+  "when": {
+    "type": "postToolUse",
+    "toolTypes": [
+      "write"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Check if the file you just edited is a controller, route, or validation file. If it is, make sure src/config/swagger.js has been updated to reflect any new or changed endpoints, request bodies, response shapes, or schemas. If swagger is not yet updated, update it now."
+  }
+}

@@ -39,6 +39,16 @@ module.exports = {
         createdAt: new Date(),
         updatedAt: new Date(),
       },
+       {
+        id: uuidv4(),
+        name: 'super visor',
+        email: 'supervisor@gmail.com',
+        password,
+        role: 'SUPERVISOR',
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
     ]);
   },
 

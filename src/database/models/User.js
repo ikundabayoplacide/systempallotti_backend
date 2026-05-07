@@ -43,7 +43,7 @@ User.init(
       },
     },
     role: {
-      type: DataTypes.ENUM('ADMIN', 'STAFF', 'CUSTOMER'),
+      type: DataTypes.ENUM('ADMIN', 'STAFF', 'CUSTOMER','SUPERVISOR'),
       defaultValue: 'STAFF',
       allowNull: false,
     },

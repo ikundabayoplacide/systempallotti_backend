@@ -8,8 +8,8 @@ const createUserValidation = [
     .withMessage('Password must be at least 6 characters'),
   body('role')
     .optional()
-    .isIn(['ADMIN', 'STAFF', 'CUSTOMER'])
-    .withMessage('Role must be ADMIN, STAFF, or CUSTOMER'),
+    .isIn(['ADMIN', 'SUPERVISOR', 'STAFF', 'CUSTOMER'])
+    .withMessage('Role must be ADMIN, SUPERVISOR, STAFF, or CUSTOMER'),
 ];
 
 const updateUserValidation = [
@@ -17,8 +17,8 @@ const updateUserValidation = [
   body('email').optional().isEmail().withMessage('Valid email is required').normalizeEmail(),
   body('role')
     .optional()
-    .isIn(['ADMIN', 'STAFF', 'CUSTOMER'])
-    .withMessage('Role must be ADMIN, STAFF, or CUSTOMER'),
+    .isIn(['ADMIN', 'SUPERVISOR', 'STAFF', 'CUSTOMER'])
+    .withMessage('Role must be ADMIN, SUPERVISOR, STAFF, or CUSTOMER'),
   body('isActive').optional().isBoolean().withMessage('isActive must be a boolean'),
 ];
 
