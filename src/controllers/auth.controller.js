@@ -12,7 +12,7 @@ const register = async (req, res, next) => {
   try {
     const { name, email, password, role } = req.body;
 
-    const existing = await User.scope('withPassword').findOne({ where: { email } });
+    const existing = await User.findOne({ where: { email } });
     if (existing) return error(res, 'Email already in use.', 409);
 
     const user = await User.create({ name, email, password, role: role || 'STAFF' });
@@ -35,7 +35,7 @@ const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.scope('withPassword').findOne({ where: { email } });
+    const user = await User.findOne({ where: { email } });
     if (!user || !user.isActive) return error(res, 'Invalid credentials.', 401);
 
     const isMatch = await user.comparePassword(password);
@@ -77,7 +77,7 @@ const changePassword = async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body;
 
-    const user = await User.scope('withPassword').findByPk(req.user.id);
+    const user = await User.findByPk(req.user.id);
     if (!user) return error(res, 'User not found.', 404);
 
     const isMatch = await user.comparePassword(currentPassword);

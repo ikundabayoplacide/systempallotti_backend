@@ -12,7 +12,7 @@ const createUser = async (req, res, next) => {
   try {
     const { name, email, password, role } = req.body;
 
-    const existing = await User.scope('withPassword').findOne({ where: { email } });
+    const existing = await User.findOne({ where: { email } });
     if (existing) return error(res, 'Email already in use.', 409);
 
     const user = await User.create({ name, email, password, role: role });
