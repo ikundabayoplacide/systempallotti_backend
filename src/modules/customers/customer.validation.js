@@ -7,7 +7,7 @@ const createCustomerValidation = [
   body('company').optional().trim(),
   body('address').optional().trim(),
   body('notes').optional().trim(),
-  body('type').optional().isIn(['BUSINESS', 'VISITOR']).withMessage('Type must be BUSINESS or VISITOR'),
+  body('type').optional().isIn(['BUSINESS', 'VISITOR', 'BOUTIQUE']).withMessage('Type must be BUSINESS, VISITOR or BOUTIQUE'),
 ];
 
 const updateCustomerValidation = [

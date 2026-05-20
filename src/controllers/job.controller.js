@@ -3,6 +3,7 @@ const Job = require('../database/models/Job');
 const Customer = require('../database/models/Customer');
 const User = require('../database/models/User');
 const Department = require('../database/models/Department');
+const Payment = require('../database/models/Payment');
 const { success, error, paginated } = require('../utils/apiResponse');
 const { getPagination } = require('../utils/helpers');
 const notify = require('../utils/notification.service');
@@ -12,6 +13,7 @@ const jobIncludes = [
   { model: Customer, as: 'customer', attributes: ['id', 'name', 'email', 'phone', 'company'] },
   { model: User, as: 'createdBy', attributes: ['id', 'name', 'email', 'role'] },
   { model: Department, as: 'departmentAssignedTo', attributes: ['id', 'name'] },
+  { model: Payment, as: 'payments', attributes: ['id', 'paymentMethod', 'paymentState', 'amountPaid', 'balance', 'receiptNo', 'paidAt'] },
 ];
 
 /**
@@ -135,6 +137,24 @@ const createJob = async (req, res, next) => {
     );
 
     const created = await Job.findByPk(job.id, { include: jobIncludes });
+
+    // Auto-create a pending payment record if job has an amount
+    if (amount) {
+      await Payment.create({
+        jobId: job.id,
+        recordedById: req.user.id,
+        receivedById: null,
+        verifiedById: null,
+        receiptNo: null,
+        amountPaid: 0,
+        balance: parseFloat(amount),
+        paymentMethod: null,
+        paymentState: null,
+        paymentNote: null,
+        paidAt: new Date(),
+      });
+    }
+
     return success(res, created, 'Job registered successfully.', 201);
   } catch (err) {
     next(err);
@@ -286,62 +306,6 @@ const assignJob = async (req, res, next) => {
       { id: job.id, jobNumber: job.jobNumber, departmentAssignedTo: { id: dept.id, name: dept.name } },
       'Job assigned to department successfully.'
     );
-  } catch (err) {
-    next(err);
-  }
-};
-
-/**
- * PATCH /api/jobs/:id/payment
- * Mark a job as paid. Restricted to ADMIN, DAF, ACCOUNTANT.
- */
-const markJobAsPaid = async (req, res, next) => {
-  try {
-    const job = await Job.findByPk(req.params.id, { include: jobIncludes });
-    if (!job) return error(res, 'Job not found.', 404);
-
-    if (job.paymentStatus === 'paid') {
-      return error(res, 'Job is already marked as paid.', 409);
-    }
-
-    const { paymentMethod, paymentNote } = req.body;
-
-    if (!paymentMethod) {
-      return error(res, 'paymentMethod is required.', 400);
-    }
-
-    const validMethods = ['CASH', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CARD'];
-    if (!validMethods.includes(paymentMethod)) {
-      return error(res, `paymentMethod must be one of: ${validMethods.join(', ')}.`, 400);
-    }
-
-    await job.update({ paymentStatus: 'paid', paymentMethod, paymentNote: paymentNote || null, paidAt: new Date() });
-
-    // Notify all ADMIN and DAF users
-    const recipients = await User.findAll({
-      where: { role: ['ADMIN', 'DAF'], isActive: true },
-      attributes: ['id'],
-    });
-
-    await Promise.all(
-      recipients.map((u) =>
-        notify(
-          u.id,
-          'Payment Received',
-          `Payment for job ${job.jobNumber} ("${job.title}") has been recorded.`,
-          'PAYMENT_RECEIVED',
-          'job',
-          job.id
-        )
-      )
-    );
-
-    return success(res, {
-      id: job.id,
-      jobNumber: job.jobNumber,
-      paymentStatus: 'paid',
-      paidAt: job.paidAt,
-    }, 'Job marked as paid.');
   } catch (err) {
     next(err);
   }
@@ -538,7 +502,6 @@ module.exports = {
   updateJob,
   updateJobStatus,
   assignJob,
-  markJobAsPaid,
   completeJob,
   deliverJob,
   getCompletedAndPaidJobs,

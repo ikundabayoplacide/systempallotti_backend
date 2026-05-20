@@ -96,7 +96,7 @@ const options = {
             company: { type: 'string', example: 'Acme Corp' },
             address: { type: 'string', example: 'KG 123 St' },
             notes: { type: 'string' },
-            type: { type: 'string', enum: ['BUSINESS', 'VISITOR'], example: 'BUSINESS' },
+            type: { type: 'string', enum: ['BUSINESS', 'VISITOR', 'BOUTIQUE'], example: 'BUSINESS' },
             isActive: { type: 'boolean' },
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: { type: 'string', format: 'date-time' },
@@ -112,7 +112,7 @@ const options = {
             company: { type: 'string', example: 'Acme Corp' },
             address: { type: 'string', example: 'KG 123 St' },
             notes: { type: 'string' },
-            type: { type: 'string', enum: ['BUSINESS', 'VISITOR'], example: 'BUSINESS', description: 'BUSINESS triggers a notification to Sales Managers' },
+            type: { type: 'string', enum: ['BUSINESS', 'VISITOR', 'BOUTIQUE'], example: 'BUSINESS', description: 'BUSINESS or BOUTIQUE triggers a notification to Sales Managers' },
           },
         },
         UpdateCustomerRequest: {
@@ -124,7 +124,7 @@ const options = {
             company: { type: 'string' },
             address: { type: 'string' },
             notes: { type: 'string' },
-            type: { type: 'string', enum: ['BUSINESS', 'VISITOR'] },
+            type: { type: 'string', enum: ['BUSINESS', 'VISITOR', 'BOUTIQUE'] },
             isActive: { type: 'boolean' },
           },
         },
@@ -208,6 +208,7 @@ const options = {
             bindingType: { type: 'string', example: 'none' },
             amount: { type: 'number', format: 'float', example: 150.00, nullable: true },
             paymentStatus: { type: 'string', enum: ['unpaid', 'paid'], example: 'unpaid' },
+            receiptNo: { type: 'string', example: 'RCP-2026-001', nullable: true },
             paymentMethod: { type: 'string', enum: ['CASH', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CARD'], nullable: true },
             paymentNote: { type: 'string', nullable: true },
             paidAt: { type: 'string', format: 'date-time', nullable: true },
@@ -290,6 +291,43 @@ const options = {
             departmentAssignedToId: { type: 'string', format: 'uuid', example: 'a1b2c3d4-...', description: 'ID of the department to assign this job to' },
           },
         },
+        // ── Payment ──────────────────────────────────────────────────────────
+        Payment: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            jobId: { type: 'string', format: 'uuid' },
+            recordedById: { type: 'string', format: 'uuid' },
+            receivedById: { type: 'string', format: 'uuid' },
+            verifiedById: { type: 'string', format: 'uuid', nullable: true },
+            receiptNo: { type: 'string', example: 'RCP-2026-001' },
+            amountPaid: { type: 'number', format: 'float', example: 150.00 },
+            balance: { type: 'number', format: 'float', example: 50.00 },
+            paymentMethod: { type: 'string', enum: ['CASH', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CARD'], example: 'CASH' },
+            paymentState: { type: 'string', enum: ['FULL', 'PARTIAL'], example: 'FULL' },
+            paymentNote: { type: 'string', nullable: true },
+            paidAt: { type: 'string', format: 'date-time' },
+            job: { $ref: '#/components/schemas/Job' },
+            recordedBy: { $ref: '#/components/schemas/User' },
+            receivedBy: { $ref: '#/components/schemas/User' },
+            verifiedBy: { $ref: '#/components/schemas/User' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        CreatePaymentRequest: {
+          type: 'object',
+          required: ['jobId', 'amountPaid', 'paymentMethod', 'paymentState', 'receivedById'],
+          properties: {
+            jobId: { type: 'string', format: 'uuid', example: 'a1b2c3d4-...' },
+            amountPaid: { type: 'number', format: 'float', minimum: 0.01, example: 150.00 },
+            paymentMethod: { type: 'string', enum: ['CASH', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CARD'], example: 'CASH' },
+            paymentState: { type: 'string', enum: ['FULL', 'PARTIAL'], example: 'FULL' },
+            receivedById: { type: 'string', format: 'uuid', description: 'ID of the receptionist who accepted the payment' },
+            verifiedById: { type: 'string', format: 'uuid', nullable: true, description: 'ID of the accountant who verified the payment (optional)' },
+            paymentNote: { type: 'string', example: 'Paid via MTN Mobile Money' },
+          },
+        },
         // ── Notification ─────────────────────────────────────────────────────
         Notification: {
           type: 'object',
@@ -353,6 +391,7 @@ const options = {
       { name: 'Products', description: 'Product catalogue management' },
       { name: 'Departments', description: 'Department management' },
       { name: 'Jobs', description: 'Job registration and workflow management' },
+      { name: 'Payments', description: 'Payment recording and management' },
       { name: 'Notifications', description: 'User notifications' },
     ],
     paths: {
@@ -514,7 +553,7 @@ const options = {
             { in: 'query', name: 'page', schema: { type: 'integer', default: 1 } },
             { in: 'query', name: 'limit', schema: { type: 'integer', default: 10 } },
             { in: 'query', name: 'search', schema: { type: 'string' }, description: 'Search by name, email, company or phone' },
-            { in: 'query', name: 'type', schema: { type: 'string', enum: ['BUSINESS', 'VISITOR'] }, description: 'Filter by customer type' },
+            { in: 'query', name: 'type', schema: { type: 'string', enum: ['BUSINESS', 'VISITOR', 'BOUTIQUE'] }, description: 'Filter by customer type' },
           ],
           responses: {
             200: { description: 'Paginated list of customers', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/PaginatedResponse' }, { type: 'object', properties: { data: { type: 'array', items: { $ref: '#/components/schemas/Customer' } } } }] } } } },
@@ -911,55 +950,56 @@ const options = {
           },
         },
       },
-      '/api/jobs/{id}/payment': {
-        patch: {
-          tags: ['Jobs'],
-          summary: 'Mark a job as paid (ADMIN, DAF, ACCOUNTANT, RECEPTIONIST)',
-          parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string', format: 'uuid' } }],
-          requestBody: {
-            required: true,
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  required: ['paymentMethod'],
-                  properties: {
-                    paymentMethod: { type: 'string', enum: ['CASH', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CARD'], example: 'CASH' },
-                    paymentNote: { type: 'string', example: 'Paid via MTN Mobile Money', description: 'Optional note about the payment' },
-                  },
-                },
-              },
-            },
-          },
+      // ── Payments ───────────────────────────────────────────────────────────
+      '/api/payments': {
+        get: {
+          tags: ['Payments'],
+          summary: 'Get all payments (paginated)',
+          parameters: [
+            { in: 'query', name: 'page', schema: { type: 'integer', default: 1 } },
+            { in: 'query', name: 'limit', schema: { type: 'integer', default: 10 } },
+            { in: 'query', name: 'jobId', schema: { type: 'string', format: 'uuid' }, description: 'Filter by job' },
+            { in: 'query', name: 'paymentMethod', schema: { type: 'string', enum: ['CASH', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CARD'] } },
+            { in: 'query', name: 'paymentState', schema: { type: 'string', enum: ['FULL', 'PARTIAL'] } },
+            { in: 'query', name: 'search', schema: { type: 'string' }, description: 'Search by receipt number' },
+          ],
           responses: {
-            200: {
-              description: 'Job marked as paid',
-              content: {
-                'application/json': {
-                  schema: {
-                    allOf: [
-                      { $ref: '#/components/schemas/SuccessResponse' },
-                      {
-                        type: 'object',
-                        properties: {
-                          data: {
-                            type: 'object',
-                            properties: {
-                              id: { type: 'string', format: 'uuid' },
-                              jobNumber: { type: 'string' },
-                              paymentStatus: { type: 'string', enum: ['unpaid', 'paid'] },
-                              paidAt: { type: 'string', format: 'date-time' },
-                            },
-                          },
-                        },
-                      },
-                    ],
-                  },
-                },
-              },
-            },
+            200: { description: 'Paginated list of payments', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/PaginatedResponse' }, { type: 'object', properties: { data: { type: 'array', items: { $ref: '#/components/schemas/Payment' } } } }] } } } },
+          },
+        },
+        post: {
+          tags: ['Payments'],
+          summary: 'Record a payment for a job',
+          requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/CreatePaymentRequest' } } } },
+          responses: {
+            201: { description: 'Payment recorded successfully', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/SuccessResponse' }, { type: 'object', properties: { data: { $ref: '#/components/schemas/Payment' } } }] } } } },
             404: { description: 'Job not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
-            409: { description: 'Job already paid', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          },
+        },
+      },
+      '/api/payments/job/{jobId}': {
+        get: {
+          tags: ['Payments'],
+          summary: 'Get all payments for a specific job',
+          parameters: [
+            { in: 'path', name: 'jobId', required: true, schema: { type: 'string', format: 'uuid' } },
+            { in: 'query', name: 'page', schema: { type: 'integer', default: 1 } },
+            { in: 'query', name: 'limit', schema: { type: 'integer', default: 10 } },
+          ],
+          responses: {
+            200: { description: 'Paginated list of payments for the job', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/PaginatedResponse' }, { type: 'object', properties: { data: { type: 'array', items: { $ref: '#/components/schemas/Payment' } } } }] } } } },
+            404: { description: 'Job not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          },
+        },
+      },
+      '/api/payments/{id}': {
+        get: {
+          tags: ['Payments'],
+          summary: 'Get a payment by ID',
+          parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string', format: 'uuid' } }],
+          responses: {
+            200: { description: 'Payment data', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/SuccessResponse' }, { type: 'object', properties: { data: { $ref: '#/components/schemas/Payment' } } }] } } } },
+            404: { description: 'Payment not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
           },
         },
       },

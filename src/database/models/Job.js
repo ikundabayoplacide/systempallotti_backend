@@ -114,18 +114,6 @@ Job.init(
       defaultValue: 'unpaid',
       allowNull: false,
     },
-    paymentMethod: {
-      type: DataTypes.ENUM('CASH', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CARD'),
-      allowNull: true,
-    },
-    paymentNote: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-    },
-    paidAt: {
-      type: DataTypes.DATE,
-      allowNull: true,
-    },
     departmentAssignedToId: {
       type: DataTypes.UUID,
       allowNull: true,

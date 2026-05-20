@@ -87,6 +87,11 @@ module.exports = {
         defaultValue: 'unpaid',
         allowNull: false,
       },
+      receiptNo: {
+        type: Sequelize.STRING,
+        allowNull: true,
+        unique: true,
+      },
       paymentMethod: {
         type: Sequelize.ENUM('CASH', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CARD'),
         allowNull: true,

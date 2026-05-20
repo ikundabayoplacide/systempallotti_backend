@@ -10,7 +10,6 @@ const {
   updateJob,
   updateJobStatus,
   assignJob,
-  markJobAsPaid,
   completeJob,
   deliverJob,
   getCompletedAndPaidJobs,
@@ -50,7 +49,6 @@ router.delete('/:id', authorize('ADMIN'), deleteJob);
 // Workflow actions
 router.patch('/:id/status', authorize('ADMIN', 'RECEPTIONIST', 'SALES', 'PRINTEMPLOYEE', 'SUPERVISOR'), updateJobStatusValidation, validate, updateJobStatus);
 router.post('/:id/assign', authorize('ADMIN', 'SUPERVISOR', 'SALES'), assignJobValidation, validate, assignJob);
-router.patch('/:id/payment', authorize('ADMIN', 'DAF', 'ACCOUNTANT', 'RECEPTIONIST', 'SALES'), markJobAsPaid);
 router.patch('/:id/deliver', authorize('ADMIN', 'RECEPTIONIST', 'SUPERVISOR', 'SALES'), deliverJob);
 router.patch('/:id/complete', authorize('ADMIN', 'RECEPTIONIST', 'SUPERVISOR', 'SALES'), completeJob);
 
