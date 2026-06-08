@@ -19,8 +19,7 @@ module.exports = {
     }
   },
 
-  async down(queryInterface) {
-    // PostgreSQL does not support removing enum values natively.
+  async down(_queryInterface) {
     // To roll back you would need to recreate the type — skip for safety.
     console.warn('Down migration: removing enum values from enum_jobs_state is not supported by PostgreSQL. Skipping.');
   },

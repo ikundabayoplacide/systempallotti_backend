@@ -8,8 +8,6 @@ const { success, error, paginated } = require('../utils/apiResponse');
 const { getPagination } = require('../utils/helpers');
 const notify = require('../utils/notification.service');
 
-const itemIncludes = [];
-
 const entryIncludes = [
   { model: StockItem, as: 'stockItem', attributes: ['id', 'itemName', 'category', 'unit', 'currentStock'] },
   { model: User, as: 'receivedBy', attributes: ['id', 'name', 'email', 'role'] },

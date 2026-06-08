@@ -2,8 +2,7 @@
 
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up(queryInterface, Sequelize) {
-    // 1. Drop the default value on users.role first (it depends on the ENUM type)
+  async up(queryInterface, _Sequelize) {
     await queryInterface.sequelize.query(`
       ALTER TABLE users ALTER COLUMN role DROP DEFAULT;
     `);
@@ -34,8 +33,7 @@ module.exports = {
     `);
   },
 
-  async down(queryInterface, Sequelize) {
-    // Revert users.role back to ENUM
+  async down(queryInterface, _Sequelize) {
     await queryInterface.sequelize.query(`
       CREATE TYPE "enum_users_role" AS ENUM (
         'ADMIN','RECEPTIONIST','SALES','DAF','ACCOUNTANT',

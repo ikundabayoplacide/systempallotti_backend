@@ -114,7 +114,7 @@ module.exports = {
     await queryInterface.addIndex('invoices', ['status']);
   },
 
-  async down(queryInterface, Sequelize) {
+  async down(queryInterface) {
     await queryInterface.dropTable('invoices');
     await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_invoices_status";');
     await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_invoices_discountType";');
