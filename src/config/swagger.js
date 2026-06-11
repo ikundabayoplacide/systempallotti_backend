@@ -566,6 +566,7 @@ const options = {
             stock: { type: 'integer', example: 100 },
             minStock: { type: 'integer', example: 10 },
             status: { type: 'string', enum: ['in-stock', 'low-stock', 'out-of-stock'], example: 'in-stock' },
+            saleStatus: { type: 'string', enum: ['pending', 'sold'], example: 'pending' },
             isActive: { type: 'boolean' },
             category: { $ref: '#/components/schemas/BoutiqueCategory' },
             createdAt: { type: 'string', format: 'date-time' },
@@ -2184,7 +2185,7 @@ const options = {
         },
         post: {
           tags: ['Stock'],
-          summary: 'Request a stock sortie / stock out (ADMIN, STOCK, SUPERVISOR, PRODUCTION_MANAGER)',
+          summary: 'Request a stock sortie / stock out (ADMIN, STOCK, SUPERVISOR, PRODUCTION_MANAGER, RECEPTIONIST)',
           requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['stockItemId', 'quantityOut'], properties: { stockItemId: { type: 'string', format: 'uuid' }, quantityOut: { type: 'number', minimum: 0.01 }, jobId: { type: 'string', format: 'uuid' }, dossierNo: { type: 'string' }, reason: { type: 'string' }, notes: { type: 'string' }, sortieDate: { type: 'string', format: 'date-time' } } } } } },
           responses: {
             201: { description: 'Sortie request created', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/SuccessResponse' }, { type: 'object', properties: { data: { $ref: '#/components/schemas/StockSortie' } } }] } } } },
@@ -2275,7 +2276,7 @@ const options = {
         },
         post: {
           tags: ['Boutique'],
-          summary: 'Create a boutique product (ADMIN, STOCK)',
+          summary: 'Create a boutique product (ADMIN, STOCK, RECEPTIONIST)',
           requestBody: { required: true, content: { 'application/json': { schema: { $ref: '#/components/schemas/CreateBoutiqueProductRequest' } } } },
           responses: {
             201: { description: 'Product created', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/SuccessResponse' }, { type: 'object', properties: { data: { $ref: '#/components/schemas/BoutiqueProduct' } } }] } } } },
@@ -2310,6 +2311,31 @@ const options = {
           responses: {
             200: { description: 'Product deleted', content: { 'application/json': { schema: { $ref: '#/components/schemas/SuccessResponse' } } } },
             404: { description: 'Product not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          },
+        },
+      },
+      '/api/boutique/products/{id}/sale-status': {
+        patch: {
+          tags: ['Boutique'],
+          summary: 'Sell a quantity of a boutique product — deducts stock, sets saleStatus to sold when stock reaches 0 (ADMIN, STOCK, RECEPTIONIST)',
+          parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string', format: 'uuid' } }],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    quantity: { type: 'integer', minimum: 1, example: 2, description: 'Number of units sold (defaults to 1)' },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            200: { description: 'Sale recorded', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/SuccessResponse' }, { type: 'object', properties: { data: { $ref: '#/components/schemas/BoutiqueProduct' } } }] } } } },
+            404: { description: 'Product not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+            422: { description: 'Insufficient stock or invalid quantity', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
           },
         },
       },

@@ -39,10 +39,29 @@ const updateStockValidation = [
   body('reason').trim().notEmpty().withMessage('reason is required'),
 ];
 
+const markAsSoldValidation = [
+  body('quantity').optional().isInt({ min: 1 }).withMessage('quantity must be a positive integer'),
+  body('amountPaid').notEmpty().withMessage('amountPaid is required')
+    .isFloat({ min: 0 }).withMessage('amountPaid must be a non-negative number'),
+  body('paymentMethod').optional().isIn(['cash', 'mobile', 'card', 'bank'])
+    .withMessage('paymentMethod must be one of: cash, mobile, card, bank'),
+  body('customerId').optional().isUUID().withMessage('customerId must be a valid UUID'),
+  body('note').optional().trim(),
+];
+
+const updateSaleValidation = [
+  body('amountPaid').optional().isFloat({ min: 0 }).withMessage('amountPaid must be a non-negative number'),
+  body('paymentMethod').optional().isIn(['cash', 'mobile', 'card', 'bank'])
+    .withMessage('paymentMethod must be one of: cash, mobile, card, bank'),
+  body('note').optional().trim(),
+];
+
 module.exports = {
   createCategoryValidation,
   updateCategoryValidation,
   createProductValidation,
   updateProductValidation,
   updateStockValidation,
+  markAsSoldValidation,
+  updateSaleValidation,
 };

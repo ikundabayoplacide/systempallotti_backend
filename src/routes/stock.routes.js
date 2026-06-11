@@ -31,7 +31,7 @@ router.post('/entries', authorize('ADMIN', 'STOCK'), createEntryValidation, vali
 
 // ── Stock Sorties (OUT) ───────────────────────────────────────────────────────
 router.get('/sorties', getAllSorties);
-router.post('/sorties', authorize('ADMIN', 'STOCK', 'SUPERVISOR', 'PRODUCTION_MANAGER'), createSortieValidation, validate, createSortie);
+router.post('/sorties', authorize('ADMIN', 'STOCK', 'SUPERVISOR', 'PRODUCTION_MANAGER', 'RECEPTIONIST'), createSortieValidation, validate, createSortie);
 router.patch('/sorties/:id/approve', authorize('ADMIN', 'STOCK'), approveSortie);
 router.patch('/sorties/:id/reject', authorize('ADMIN', 'STOCK'), rejectSortie);
 

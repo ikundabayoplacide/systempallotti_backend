@@ -26,6 +26,10 @@ const Employee = require('./Employee');
 const EmployeeJobAssignment = require('./EmployeeJobAssignment');
 const MaterialRequest = require('./MaterialRequest');
 const MaterialRequestItem = require('./MaterialRequestItem');
+const BoutiqueStockRequest = require('./BoutiqueStockRequest');
+const BoutiqueStockRequestItem = require('./BoutiqueStockRequestItem');
+const BoutiqueSale = require('./BoutiqueSale');
+const Report = require('./Report');
 // User → Department
 User.belongsTo(Department, { foreignKey: 'departmentId', as: 'department' });
 Department.hasMany(User, { foreignKey: 'departmentId', as: 'users' });
@@ -191,4 +195,35 @@ MaterialRequest.hasMany(MaterialRequestItem, { foreignKey: 'materialRequestId', 
 EmployeeJobAssignment.belongsTo(User, { foreignKey: 'assignedById', as: 'assignedBy' });
 User.hasMany(EmployeeJobAssignment, { foreignKey: 'assignedById', as: 'jobAssignments' });
 
-module.exports = { User, Customer, Job, Department, Notification, Payment, BoutiqueCategory, BoutiqueProduct, BoutiqueStockMovement, StockItem, StockEntry, StockSortie, JobItem, Quotation, CustomerVisit, Permission, RolePermission, Role, Invoice, EmployeeJobAssignment, MaterialRequest, MaterialRequestItem };
+// BoutiqueStockRequest → User (requestedBy)
+BoutiqueStockRequest.belongsTo(User, { foreignKey: 'requestedById', as: 'requestedBy' });
+User.hasMany(BoutiqueStockRequest, { foreignKey: 'requestedById', as: 'boutiqueStockRequests' });
+
+// BoutiqueStockRequest → User (respondedBy)
+BoutiqueStockRequest.belongsTo(User, { foreignKey: 'respondedBy', as: 'responder' });
+
+// BoutiqueStockRequestItem → BoutiqueStockRequest
+BoutiqueStockRequestItem.belongsTo(BoutiqueStockRequest, { foreignKey: 'boutiqueStockRequestId', as: 'request' });
+BoutiqueStockRequest.hasMany(BoutiqueStockRequestItem, { foreignKey: 'boutiqueStockRequestId', as: 'items' });
+
+// BoutiqueStockRequestItem → BoutiqueProduct
+BoutiqueStockRequestItem.belongsTo(BoutiqueProduct, { foreignKey: 'productId', as: 'product' });
+BoutiqueProduct.hasMany(BoutiqueStockRequestItem, { foreignKey: 'productId', as: 'stockRequestItems' });
+
+// BoutiqueSale → BoutiqueProduct
+BoutiqueSale.belongsTo(BoutiqueProduct, { foreignKey: 'productId', as: 'product' });
+BoutiqueProduct.hasMany(BoutiqueSale, { foreignKey: 'productId', as: 'sales' });
+
+// BoutiqueSale → User (sold by)
+BoutiqueSale.belongsTo(User, { foreignKey: 'soldById', as: 'soldBy' });
+User.hasMany(BoutiqueSale, { foreignKey: 'soldById', as: 'boutiqueSales' });
+
+// BoutiqueSale → Customer (optional)
+BoutiqueSale.belongsTo(Customer, { foreignKey: 'customerId', as: 'customer' });
+Customer.hasMany(BoutiqueSale, { foreignKey: 'customerId', as: 'boutiqueSales' });
+
+// Report → User (created by)
+Report.belongsTo(User, { foreignKey: 'createdById', as: 'createdBy' });
+User.hasMany(Report, { foreignKey: 'createdById', as: 'reports' });
+
+module.exports = { User, Customer, Job, Department, Notification, Payment, BoutiqueCategory, BoutiqueProduct, BoutiqueStockMovement, StockItem, StockEntry, StockSortie, JobItem, Quotation, CustomerVisit, Permission, RolePermission, Role, Invoice, EmployeeJobAssignment, MaterialRequest, MaterialRequestItem, BoutiqueStockRequest, BoutiqueStockRequestItem, BoutiqueSale, Report };

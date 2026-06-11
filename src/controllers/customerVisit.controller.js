@@ -17,12 +17,17 @@ const visitIncludes = [
 const getAllVisits = async (req, res, next) => {
   try {
     const { page, limit, skip } = getPagination(req.query);
-    const { customerId, type, date } = req.query;
+    const { customerId, type, date, from, to } = req.query;
 
     const where = {};
     if (customerId) where.customerId = customerId;
     if (type) where.type = type;
-    if (date) {
+    if (from || to) {
+      const start = from ? new Date(from) : new Date('2000-01-01');
+      const end   = to   ? new Date(to)   : new Date();
+      if (!to) end.setHours(23, 59, 59, 999);
+      where.checkinAt = { [Op.between]: [start, end] };
+    } else if (date) {
       const start = new Date(date);
       start.setHours(0, 0, 0, 0);
       const end = new Date(date);

@@ -15,19 +15,18 @@ class BoutiqueProduct extends Model {
    * Auto-generate SKU from category prefix + sequence
    */
   static async generateSku(skuPrefix) {
-    const last = await BoutiqueProduct.findOne({
+    const all = await BoutiqueProduct.findAll({
       where: { sku: { [require('sequelize').Op.like]: `${skuPrefix}-%` } },
-      order: [['createdAt', 'DESC']],
+      attributes: ['sku'],
     });
 
-    let nextNumber = 1;
-    if (last) {
-      const parts = last.sku.split('-');
-      const lastSeq = parseInt(parts[1], 10);
-      if (!isNaN(lastSeq)) nextNumber = lastSeq + 1;
+    let maxSeq = 0;
+    for (const p of all) {
+      const seq = parseInt(p.sku.slice(skuPrefix.length + 1), 10);
+      if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
     }
 
-    return `${skuPrefix}-${String(nextNumber).padStart(3, '0')}`;
+    return `${skuPrefix}-${String(maxSeq + 1).padStart(3, '0')}`;
   }
 }
 
@@ -88,6 +87,11 @@ BoutiqueProduct.init(
       type: DataTypes.BOOLEAN,
       defaultValue: true,
       allowNull: false,
+    },
+    saleStatus: {
+      type: DataTypes.ENUM('pending', 'sold'),
+      allowNull: false,
+      defaultValue: 'pending',
     },
   },
   {

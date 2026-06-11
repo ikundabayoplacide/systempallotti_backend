@@ -2,16 +2,19 @@ const { Op } = require('sequelize');
 const Payment = require('../database/models/Payment');
 const Job = require('../database/models/Job');
 const User = require('../database/models/User');
-// const Customer = require('../database/models/Customer');
+const Customer = require('../database/models/Customer');
 const { success, error, paginated } = require('../utils/apiResponse');
 const { getPagination } = require('../utils/helpers');
 const notify = require('../utils/notification.service');
 
 const paymentIncludes = [
-  { model: Job, as: 'job', attributes: ['id', 'jobNumber', 'title', 'amount', 'paymentStatus'] },
-  { model: User, as: 'recordedBy', attributes: ['id', 'name', 'email', 'role'] },
-  { model: User, as: 'receivedBy', attributes: ['id', 'name', 'email', 'role'] },
-  { model: User, as: 'verifiedBy', attributes: ['id', 'name', 'email', 'role'] },
+  {
+    model: Job, as: 'job', attributes: ['id', 'jobNumber', 'title', 'amount', 'paymentStatus'],
+    include: [{ model: Customer, as: 'customer', attributes: ['id', 'name', 'phone'] }],
+  },
+  { model: User, as: 'recordedBy', attributes: ['id', 'name'] },
+  { model: User, as: 'receivedBy', attributes: ['id', 'name'] },
+  { model: User, as: 'verifiedBy', attributes: ['id', 'name'] },
 ];
 
 /**
@@ -116,12 +119,17 @@ const createPayment = async (req, res, next) => {
 const getAllPayments = async (req, res, next) => {
   try {
     const { page, limit, skip } = getPagination(req.query);
-    const { jobId, paymentMethod, paymentState, search } = req.query;
+    const { jobId, paymentMethod, paymentState, search, from, to } = req.query;
 
     const where = {};
     if (jobId) where.jobId = jobId;
     if (paymentMethod) where.paymentMethod = paymentMethod;
     if (paymentState) where.paymentState = paymentState;
+    if (from || to) {
+      const start = from ? new Date(from) : new Date('2000-01-01');
+      const end   = to   ? new Date(to)   : new Date();
+      where.paidAt = { [Op.between]: [start, end] };
+    }
 
     if (search) {
       where[Op.or] = [
@@ -173,7 +181,7 @@ const getPaymentsByJob = async (req, res, next) => {
       offset: skip,
       limit,
       order: [['paidAt', 'DESC']],
-      include: [{ model: User, as: 'recordedBy', attributes: ['id', 'name', 'email', 'role'] }],
+      include: paymentIncludes,
     });
 
     return paginated(res, rows, count, page, limit);

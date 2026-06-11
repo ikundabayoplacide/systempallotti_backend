@@ -1,7 +1,9 @@
-const { Op } = require('sequelize');
+const { Op, fn, col, literal } = require('sequelize');
 const BoutiqueProduct = require('../database/models/BoutiqueProduct');
 const BoutiqueCategory = require('../database/models/BoutiqueCategory');
 const BoutiqueStockMovement = require('../database/models/BoutiqueStockMovement');
+const BoutiqueSale = require('../database/models/BoutiqueSale');
+const Customer = require('../database/models/Customer');
 const User = require('../database/models/User');
 const { success, error, paginated } = require('../utils/apiResponse');
 const { getPagination } = require('../utils/helpers');
@@ -9,6 +11,16 @@ const { getPagination } = require('../utils/helpers');
 const productIncludes = [
   { model: BoutiqueCategory, as: 'category', attributes: ['id', 'name', 'skuPrefix', 'colorClass'] },
 ];
+
+const calcPayment = (totalPrice, amountPaid) => {
+  const diff = parseFloat(amountPaid) - parseFloat(totalPrice);
+  return {
+    totalPrice: parseFloat(totalPrice),
+    balanceDue: diff < 0 ? Math.abs(diff) : 0,
+    changeGiven: diff > 0 ? diff : 0,
+    paymentStatus: diff < 0 ? 'partial' : diff > 0 ? 'overpaid' : 'paid',
+  };
+};
 
 // ── Categories ────────────────────────────────────────────────────────────────
 
@@ -185,7 +197,202 @@ const deleteProduct = async (req, res, next) => {
   }
 };
 
-// ── Stock Management ──────────────────────────────────────────────────────────
+const markAsSold = async (req, res, next) => {
+  try {
+    const product = await BoutiqueProduct.findByPk(req.params.id);
+    if (!product) return error(res, 'Product not found.', 404);
+
+    const { quantity = 1, amountPaid, customerId, note, paymentMethod = 'cash' } = req.body;
+
+    if (!Number.isInteger(quantity) || quantity < 1)
+      return error(res, 'quantity must be a positive integer.', 422);
+    if (amountPaid === undefined || amountPaid === null)
+      return error(res, 'amountPaid is required.', 422);
+    if (amountPaid < 0)
+      return error(res, 'amountPaid cannot be negative.', 422);
+
+    const stockBefore = product.stock;
+    if (stockBefore < quantity)
+      return error(res, `Insufficient stock. Available: ${stockBefore}, requested: ${quantity}.`, 422);
+
+    const stockAfter = stockBefore - quantity;
+    const saleStatus = stockAfter === 0 ? 'sold' : 'pending';
+
+    await product.update({ stock: stockAfter, saleStatus });
+
+    await BoutiqueStockMovement.create({
+      productId: product.id,
+      changedById: req.user.id,
+      change: -quantity,
+      reason: 'sale',
+      stockBefore,
+      stockAfter,
+    });
+
+    await BoutiqueSale.create({
+      productId: product.id,
+      soldById: req.user.id,
+      customerId: customerId || null,
+      quantity,
+      unitPrice: product.price,
+      amountPaid,
+      ...calcPayment(quantity * parseFloat(product.price), amountPaid),
+      paymentMethod,
+      note: note || null,
+    });
+
+    const updated = await BoutiqueProduct.findByPk(product.id, { include: productIncludes });
+    return success(res, { ...updated.toJSON(), status: updated.status }, 'Sale recorded successfully.');
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getSalesAudit = async (req, res, next) => {
+  try {
+    const { page, limit, skip } = getPagination(req.query);
+    const { productId, soldById, customerId, from, to, paymentStatus } = req.query;
+
+    const where = {};
+    if (productId) where.productId = productId;
+    if (soldById) where.soldById = soldById;
+    if (customerId) where.customerId = customerId;
+    if (paymentStatus) where.paymentStatus = paymentStatus;
+    if (from || to) {
+      where.createdAt = {};
+      if (from) where.createdAt[Op.gte] = new Date(from);
+      if (to) where.createdAt[Op.lte] = new Date(to);
+    }
+
+    const { count, rows } = await BoutiqueSale.findAndCountAll({
+      where,
+      offset: skip,
+      limit,
+      order: [['createdAt', 'DESC']],
+      include: [
+        { model: BoutiqueProduct, as: 'product', attributes: ['id', 'sku', 'name', 'unit'], include: productIncludes },
+        { model: User, as: 'soldBy', attributes: ['id', 'name', 'email', 'role'] },
+        { model: Customer, as: 'customer', attributes: ['id', 'name', 'phone'], required: false },
+      ],
+    });
+
+    return paginated(res, rows, count, page, limit);
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getSalesSummary = async (req, res, next) => {
+  try {
+    const { from, to, productId } = req.query;
+
+    const where = {};
+    if (productId) where.productId = productId;
+    if (from || to) {
+      where.createdAt = {};
+      if (from) where.createdAt[Op.gte] = new Date(from);
+      if (to) where.createdAt[Op.lte] = new Date(to);
+    }
+
+    const [totals] = await BoutiqueSale.findAll({
+      where,
+      attributes: [
+        [fn('COUNT', col('id')), 'totalTransactions'],
+        [fn('SUM', col('quantity')), 'totalQuantitySold'],
+        [fn('SUM', col('amountPaid')), 'totalAmountPaid'],
+        [fn('SUM', literal('quantity * "unitPrice"')), 'totalExpectedRevenue'],
+      ],
+      raw: true,
+    });
+
+    const byProduct = await BoutiqueSale.findAll({
+      where,
+      attributes: [
+        'productId',
+        [fn('SUM', col('quantity')), 'totalQuantity'],
+        [fn('SUM', col('amountPaid')), 'totalAmountPaid'],
+        [fn('SUM', literal('quantity * "unitPrice"')), 'totalExpectedRevenue'],
+        [fn('COUNT', col('BoutiqueSale.id')), 'transactions'],
+      ],
+      include: [{ model: BoutiqueProduct, as: 'product', attributes: ['sku', 'name', 'unit'] }],
+      group: ['productId', 'product.id', 'product.sku', 'product.name', 'product.unit'],
+      order: [[fn('SUM', col('amountPaid')), 'DESC']],
+      raw: false,
+    });
+
+    const byPaymentMethod = await BoutiqueSale.findAll({
+      where,
+      attributes: [
+        'paymentMethod',
+        [fn('COUNT', col('id')), 'transactions'],
+        [fn('SUM', col('amountPaid')), 'totalAmountPaid'],
+      ],
+      group: ['paymentMethod'],
+      order: [[fn('SUM', col('amountPaid')), 'DESC']],
+      raw: true,
+    });
+
+    return success(res, { totals, byProduct, byPaymentMethod });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+const updateSale = async (req, res, next) => {
+  try {
+    const sale = await BoutiqueSale.findByPk(req.params.id);
+    if (!sale) return error(res, 'Sale not found.', 404);
+
+    const { amountPaid, paymentMethod, note } = req.body;
+
+    const paymentFields = amountPaid !== undefined
+      ? calcPayment(sale.totalPrice, amountPaid)
+      : {};
+
+    await sale.update({
+      ...(amountPaid !== undefined && { amountPaid }),
+      ...(paymentMethod !== undefined && { paymentMethod }),
+      ...(note !== undefined && { note }),
+      ...paymentFields,
+    });
+
+    return success(res, sale, 'Sale updated successfully.');
+  } catch (err) {
+    next(err);
+  }
+};
+
+const deleteSale = async (req, res, next) => {
+  try {
+    const sale = await BoutiqueSale.findByPk(req.params.id);
+    if (!sale) return error(res, 'Sale not found.', 404);
+
+    const product = await BoutiqueProduct.findByPk(sale.productId);
+    if (!product) return error(res, 'Associated product not found.', 404);
+
+    const stockBefore = product.stock;
+    const stockAfter = stockBefore + sale.quantity;
+    const saleStatus = 'pending';
+
+    await product.update({ stock: stockAfter, saleStatus });
+
+    await BoutiqueStockMovement.create({
+      productId: product.id,
+      changedById: req.user.id,
+      change: sale.quantity,
+      reason: 'sale cancelled',
+      stockBefore,
+      stockAfter,
+    });
+
+    await sale.destroy();
+
+    return success(res, null, 'Sale deleted and stock restored successfully.');
+  } catch (err) {
+    next(err);
+  }
+};
 
 const updateStock = async (req, res, next) => {
   try {
@@ -242,5 +449,6 @@ const getStockMovements = async (req, res, next) => {
 module.exports = {
   getAllCategories, createCategory, updateCategory, deleteCategory,
   getAllProducts, getProductById, createProduct, updateProduct, deleteProduct,
-  updateStock, getStockMovements,
+  markAsSold, updateStock, getStockMovements,
+  getSalesAudit, getSalesSummary, updateSale, deleteSale,
 };
