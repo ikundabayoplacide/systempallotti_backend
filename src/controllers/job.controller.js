@@ -150,23 +150,15 @@ const createJob = async (req, res, next) => {
     }
 
     // Notify all SUPERVISOR users (production managers)
-    const supervisors = await User.findAll({
-      where: { role: 'SUPERVISOR', isActive: true },
-      attributes: ['id'],
+    await notify({
+      createdById: req.user.id,
+      title: 'New Job Created',
+      message: `A new job "${title}" (${jobNumber}) has been registered for customer "${customer.name}".`,
+      type: 'JOB_CREATED',
+      relatedEntityType: 'job',
+      relatedEntityId: job.id,
+      targetRoles: ['ADMIN', 'SUPERVISOR'],
     });
-
-    await Promise.all(
-      supervisors.map((sv) =>
-        notify(
-          sv.id,
-          'New Job Created',
-          `A new job "${title}" (${jobNumber}) has been registered for customer "${customer.name}".`,
-          'JOB_CREATED',
-          'job',
-          job.id
-        )
-      )
-    );
 
     // Auto-create a pending payment record if job has an amount
     if (amount) {
@@ -288,24 +280,15 @@ const updateJobState = async (req, res, next) => {
 
     await job.update({ state });
 
-    // Notify ADMIN and SUPERVISOR
-    const recipients = await User.findAll({
-      where: { role: ['ADMIN', 'SUPERVISOR'], isActive: true },
-      attributes: ['id'],
+    await notify({
+      createdById: req.user.id,
+      title: 'Job State Updated',
+      message: `Job ${job.jobNumber} production state changed to "${state}".`,
+      type: 'JOB_STATUS_CHANGED',
+      relatedEntityType: 'job',
+      relatedEntityId: job.id,
+      targetRoles: ['ADMIN', 'SUPERVISOR'],
     });
-
-    await Promise.all(
-      recipients.map((u) =>
-        notify(
-          u.id,
-          'Job State Updated',
-          `Job ${job.jobNumber} production state changed to "${state}".`,
-          'JOB_STATUS_CHANGED',
-          'job',
-          job.id
-        )
-      )
-    );
 
     return success(res, { id: job.id, jobNumber: job.jobNumber, state: job.state }, 'Job state updated.');
   } catch (err) {
@@ -332,23 +315,15 @@ const updateJobStatus = async (req, res, next) => {
     await job.update({ status });
 
     // Notify all SUPERVISOR users of the status change
-    const supervisors = await User.findAll({
-      where: { role: 'SUPERVISOR', isActive: true },
-      attributes: ['id'],
+    await notify({
+      createdById: req.user.id,
+      title: 'Job Status Changed',
+      message: `Job ${job.jobNumber} status changed from "${previousStatus}" to "${status}".`,
+      type: 'JOB_STATUS_CHANGED',
+      relatedEntityType: 'job',
+      relatedEntityId: job.id,
+      targetRoles: ['ADMIN', 'SUPERVISOR'],
     });
-
-    await Promise.all(
-      supervisors.map((sv) =>
-        notify(
-          sv.id,
-          'Job Status Changed',
-          `Job ${job.jobNumber} status changed from "${previousStatus}" to "${status}".`,
-          'JOB_STATUS_CHANGED',
-          'job',
-          job.id
-        )
-      )
-    );
 
     return success(res, { id: job.id, jobNumber: job.jobNumber, status: job.status }, 'Job status updated.');
   } catch (err) {
@@ -388,44 +363,15 @@ const assignJob = async (req, res, next) => {
 
     await job.update({ departmentAssignedToId, state: departmentToState(dept.name) });
 
-    // Notify all SUPERVISOR users that they assigned the job
-    const supervisors = await User.findAll({
-      where: { role: 'SUPERVISOR', isActive: true },
-      attributes: ['id'],
+    await notify({
+      createdById: req.user.id,
+      title: 'Job Assigned to Department',
+      message: `Job ${job.jobNumber} has been assigned to the "${dept.name}" department.`,
+      type: 'JOB_ASSIGNED',
+      relatedEntityType: 'job',
+      relatedEntityId: job.id,
+      targetRoles: ['ADMIN', 'SUPERVISOR', 'PRINTEMPLOYEE'],
     });
-
-    await Promise.all(
-      supervisors.map((sv) =>
-        notify(
-          sv.id,
-          'Job Assigned to Department',
-          `Job ${job.jobNumber} has been assigned to the "${dept.name}" department.`,
-          'JOB_ASSIGNED',
-          'job',
-          job.id
-        )
-      )
-    );
-
-    // Notify all PRINTEMPLOYEE users (workers in the department get notified)
-    // In future this can be filtered by department membership; for now notify all active print employees
-    const printEmployees = await User.findAll({
-      where: { role: 'PRINTEMPLOYEE', isActive: true },
-      attributes: ['id'],
-    });
-
-    await Promise.all(
-      printEmployees.map((pe) =>
-        notify(
-          pe.id,
-          'New Job Assigned to Your Department',
-          `Job ${job.jobNumber} has been assigned to the "${dept.name}" department.`,
-          'DEPARTMENT_ASSIGNED',
-          'job',
-          job.id
-        )
-      )
-    );
 
     return success(
       res,
@@ -463,43 +409,15 @@ const reassignJob = async (req, res, next) => {
 
     await job.update({ departmentAssignedToId, state: departmentToState(newDept.name) });
 
-    // Notify SUPERVISOR and PRODUCTION_MANAGER users
-    const managers = await User.findAll({
-      where: { role: ['SUPERVISOR', 'PRODUCTION_MANAGER'], isActive: true },
-      attributes: ['id'],
+    await notify({
+      createdById: req.user.id,
+      title: 'Job Reassigned',
+      message: `Job ${job.jobNumber} has been reassigned from "${previousDept?.name || 'N/A'}" to "${newDept.name}".${reason ? ` Reason: ${reason}` : ''}`,
+      type: 'JOB_ASSIGNED',
+      relatedEntityType: 'job',
+      relatedEntityId: job.id,
+      targetRoles: ['ADMIN', 'SUPERVISOR', 'PRINTEMPLOYEE'],
     });
-
-    await Promise.all(
-      managers.map((m) =>
-        notify(
-          m.id,
-          'Job Reassigned',
-          `Job ${job.jobNumber} has been reassigned from "${previousDept?.name || 'N/A'}" to "${newDept.name}".${reason ? ` Reason: ${reason}` : ''}`,
-          'JOB_ASSIGNED',
-          'job',
-          job.id
-        )
-      )
-    );
-
-    // Notify PRINTEMPLOYEE users of the new assignment
-    const printEmployees = await User.findAll({
-      where: { role: 'PRINTEMPLOYEE', isActive: true },
-      attributes: ['id'],
-    });
-
-    await Promise.all(
-      printEmployees.map((pe) =>
-        notify(
-          pe.id,
-          'Job Reassigned to Your Department',
-          `Job ${job.jobNumber} has been reassigned to the "${newDept.name}" department.`,
-          'DEPARTMENT_ASSIGNED',
-          'job',
-          job.id
-        )
-      )
-    );
 
     return success(
       res,
@@ -535,23 +453,15 @@ const completeJob = async (req, res, next) => {
 
     await job.update({ status: 'completed' });
 
-    const recipients = await User.findAll({
-      where: { role: ['ADMIN', 'SUPERVISOR'], isActive: true },
-      attributes: ['id'],
+    await notify({
+      createdById: req.user.id,
+      title: 'Job Completed',
+      message: `Job ${job.jobNumber} ("${job.title}") has been marked as completed.`,
+      type: 'JOB_STATUS_CHANGED',
+      relatedEntityType: 'job',
+      relatedEntityId: job.id,
+      targetRoles: ['ADMIN', 'SUPERVISOR'],
     });
-
-    await Promise.all(
-      recipients.map((u) =>
-        notify(
-          u.id,
-          'Job Completed',
-          `Job ${job.jobNumber} ("${job.title}") has been marked as completed.`,
-          'JOB_STATUS_CHANGED',
-          'job',
-          job.id
-        )
-      )
-    );
 
     return success(res, {
       id: job.id,
@@ -620,24 +530,15 @@ const deliverJob = async (req, res, next) => {
       ...(deliveredByContact !== undefined && { deliveredByContact }),
     });
 
-    // Notify all ADMIN and SUPERVISOR users
-    const recipients = await User.findAll({
-      where: { role: ['ADMIN', 'SUPERVISOR'], isActive: true },
-      attributes: ['id'],
+    await notify({
+      createdById: req.user.id,
+      title: 'Job Delivered',
+      message: `Job ${job.jobNumber} ("${job.title}") has been marked as delivered.`,
+      type: 'JOB_DELIVERED',
+      relatedEntityType: 'job',
+      relatedEntityId: job.id,
+      targetRoles: ['ADMIN', 'SUPERVISOR', 'DAF'],
     });
-
-    await Promise.all(
-      recipients.map((u) =>
-        notify(
-          u.id,
-          'Job Delivered',
-          `Job ${job.jobNumber} ("${job.title}") has been marked as delivered.`,
-          'JOB_STATUS_CHANGED',
-          'job',
-          job.id
-        )
-      )
-    );
 
     return success(res, {
       id: job.id,
@@ -670,17 +571,15 @@ const rejectJob = async (req, res, next) => {
 
     await job.update({ status: 'rejected', rejectReason: rejectReason || null });
 
-    // Notify the job creator
-    await notify(
-      job.createdById,
-      'Job Rejected',
-      `Your job ${job.jobNumber} ("${job.title}") has been rejected.${
-        rejectReason ? ` Reason: ${rejectReason}` : ''
-      }`,
-      'JOB_STATUS_CHANGED',
-      'job',
-      job.id
-    );
+    await notify({
+      createdById: req.user.id,
+      title: 'Job Rejected',
+      message: `Your job ${job.jobNumber} ("${job.title}") has been rejected.${rejectReason ? ` Reason: ${rejectReason}` : ''}`,
+      type: 'JOB_STATUS_CHANGED',
+      relatedEntityType: 'job',
+      relatedEntityId: job.id,
+      targetUserIds: [job.createdById],
+    });
 
     return success(res, { id: job.id, jobNumber: job.jobNumber, status: 'rejected', rejectReason: job.rejectReason }, 'Job rejected successfully.');
   } catch (err) {
@@ -699,15 +598,15 @@ const approveJob = async (req, res, next) => {
 
     await job.update({ status: 'confirmed' });
 
-    // Notify the job creator
-    await notify(
-      job.createdById,
-      'Job Approved',
-      `Your job ${job.jobNumber} ("${job.title}") has been approved and is now confirmed.`,
-      'JOB_STATUS_CHANGED',
-      'job',
-      job.id
-    );
+    await notify({
+      createdById: req.user.id,
+      title: 'Job Approved',
+      message: `Your job ${job.jobNumber} ("${job.title}") has been approved and is now confirmed.`,
+      type: 'JOB_STATUS_CHANGED',
+      relatedEntityType: 'job',
+      relatedEntityId: job.id,
+      targetUserIds: [job.createdById],
+    });
 
     return success(res, { id: job.id, jobNumber: job.jobNumber, status: 'confirmed' }, 'Job approved successfully.');
   } catch (err) {
@@ -736,23 +635,15 @@ const updateInProduction = async (req, res, next) => {
 
     await job.update({ inProduction });
 
-    const supervisors = await User.findAll({
-      where: { role: 'SUPERVISOR', isActive: true },
-      attributes: ['id'],
+    await notify({
+      createdById: req.user.id,
+      title: 'Production Status Updated',
+      message: `Job ${job.jobNumber} production status changed to "${inProduction}" by a worker.`,
+      type: 'JOB_STATUS_CHANGED',
+      relatedEntityType: 'job',
+      relatedEntityId: job.id,
+      targetRoles: ['ADMIN', 'SUPERVISOR'],
     });
-
-    await Promise.all(
-      supervisors.map((sv) =>
-        notify(
-          sv.id,
-          'Production Status Updated',
-          `Job ${job.jobNumber} production status changed to "${inProduction}" by a worker.`,
-          'JOB_STATUS_CHANGED',
-          'job',
-          job.id
-        )
-      )
-    );
 
     return success(res, { id: job.id, jobNumber: job.jobNumber, inProduction: job.inProduction }, 'Production status updated.');
   } catch (err) {

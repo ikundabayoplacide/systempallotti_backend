@@ -4,6 +4,7 @@ const Customer = require('../database/models/Customer');
 const User = require('../database/models/User');
 const { success, error, paginated } = require('../utils/apiResponse');
 const { getPagination } = require('../utils/helpers');
+const notify = require('../utils/notification.service');
 
 const visitIncludes = [
   { model: Customer, as: 'customer', attributes: ['id', 'name', 'phone', 'email', 'company'] },
@@ -106,6 +107,16 @@ const checkIn = async (req, res, next) => {
       checkinAt: new Date(),
       purpose: purpose || null,
       notes: notes || null,
+    });
+
+    await notify({
+      createdById: req.user.id,
+      title: 'Customer Check-In',
+      message: `Customer "${customer.name}" has checked in.${purpose ? ` Purpose: ${purpose}` : ''}`,
+      type: 'CUSTOMER_CHECKIN',
+      relatedEntityType: 'customer',
+      relatedEntityId: customer.id,
+      targetRoles: ['ADMIN', 'SALESMANAGER'],
     });
 
     const created = await CustomerVisit.findByPk(visit.id, { include: visitIncludes });

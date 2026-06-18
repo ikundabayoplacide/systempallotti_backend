@@ -87,23 +87,15 @@ const createPayment = async (req, res, next) => {
     await job.update({ paymentStatus: 'paid' });
 
     // Notify ADMIN and DAF users
-    const recipients = await User.findAll({
-      where: { role: ['ADMIN', 'DAF'], isActive: true },
-      attributes: ['id'],
+    await notify({
+      createdById: req.user.id,
+      title: 'Payment Collected',
+      message: `Payment of ${paid} recorded for job ${job.jobNumber} (${paymentState}). Balance: ${balance}. Receipt: ${receiptNo}.`,
+      type: 'PAYMENT_COLLECTED',
+      relatedEntityType: 'payment',
+      relatedEntityId: payment.id,
+      targetRoles: ['ADMIN', 'DAF', 'ACCOUNTANT'],
     });
-
-    await Promise.all(
-      recipients.map((u) =>
-        notify(
-          u.id,
-          'Payment Received',
-          `Payment of ${paid} recorded for job ${job.jobNumber} (${paymentState}). Balance: ${balance}. Receipt: ${receiptNo}.`,
-          'PAYMENT_RECEIVED',
-          'payment',
-          payment.id
-        )
-      )
-    );
 
     const created = await Payment.findByPk(payment.id, { include: paymentIncludes });
     return success(res, created, 'Payment recorded successfully.', 201);

@@ -49,7 +49,7 @@ const createUser = async (req, res, next) => {
 const getAllUsers = async (req, res, next) => {
   try {
     const { page, limit, skip } = getPagination(req.query);
-    const { search, role, departmentId } = req.query;
+    const { search, role, departmentId, isActive } = req.query;
 
     const where = {};
     if (search) {
@@ -59,6 +59,7 @@ const getAllUsers = async (req, res, next) => {
     }
     if (role) where.role = role;
     if (departmentId) where.departmentId = departmentId;
+    if (isActive !== undefined) where.isActive = isActive === 'true';
 
     const { count, rows } = await User.findAndCountAll({
       where,

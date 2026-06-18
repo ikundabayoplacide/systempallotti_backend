@@ -7,6 +7,7 @@ const Customer = require('../database/models/Customer');
 const User = require('../database/models/User');
 const { success, error, paginated } = require('../utils/apiResponse');
 const { getPagination } = require('../utils/helpers');
+const notify = require('../utils/notification.service');
 
 const productIncludes = [
   { model: BoutiqueCategory, as: 'category', attributes: ['id', 'name', 'skuPrefix', 'colorClass'] },
@@ -155,6 +156,16 @@ const createProduct = async (req, res, next) => {
         stockAfter: stock,
       });
     }
+
+    await notify({
+      createdById: req.user.id,
+      title: 'New Boutique Product Added',
+      message: `A new product "${name}" (SKU: ${sku}) has been added to the boutique.`,
+      type: 'BOUTIQUE_PRODUCT_ADDED',
+      relatedEntityType: 'boutiqueProduct',
+      relatedEntityId: product.id,
+      targetRoles: ['ADMIN', 'SALESMANAGER'],
+    });
 
     const created = await BoutiqueProduct.findByPk(product.id, { include: productIncludes });
     return success(res, { ...created.toJSON(), status: created.status }, 'Product created successfully.', 201);

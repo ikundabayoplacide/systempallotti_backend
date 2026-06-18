@@ -3,9 +3,9 @@
 module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.addColumn('stock_items', 'type', {
-      type: Sequelize.ENUM('boutique', 'hobe', 'general'),
+      type: Sequelize.ENUM('boutique', 'hobe'),
       allowNull: false,
-      defaultValue: 'general',
+      defaultValue: 'boutique',
       comment: 'Indicates which department this stock item belongs to',
     });
 

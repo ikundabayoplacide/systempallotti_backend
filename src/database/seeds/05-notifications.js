@@ -6,7 +6,6 @@ const { QueryTypes } = require('sequelize');
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface) {
-    // Fetch the admin user to seed sample notifications
     const users = await queryInterface.sequelize.query(
       `SELECT id FROM users WHERE email = 'admin@printinghouse.com' LIMIT 1`,
       { type: QueryTypes.SELECT }
@@ -15,29 +14,31 @@ module.exports = {
     if (!users.length) return;
 
     const adminId = users[0].id;
+    const notifId = uuidv4();
 
     await queryInterface.bulkInsert('notifications', [
       {
-        id: uuidv4(),
-        userId: adminId,
+        id: notifId,
+        createdById: adminId,
         title: 'Welcome to Printing House',
         message: 'Your system is set up and ready to use.',
         type: 'GENERAL',
-        isRead: false,
         relatedEntityType: null,
         relatedEntityId: null,
+        targetRoles: '{}',
         createdAt: new Date(),
         updatedAt: new Date(),
       },
+    ]);
+
+    // Create a read record so the admin sees the welcome notification
+    await queryInterface.bulkInsert('notification_reads', [
       {
         id: uuidv4(),
+        notificationId: notifId,
         userId: adminId,
-        title: 'System Ready',
-        message: 'All departments and users have been seeded successfully.',
-        type: 'GENERAL',
         isRead: false,
-        relatedEntityType: null,
-        relatedEntityId: null,
+        viewedAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
       },
@@ -45,6 +46,7 @@ module.exports = {
   },
 
   async down(queryInterface) {
+    await queryInterface.bulkDelete('notification_reads', null, {});
     await queryInterface.bulkDelete('notifications', null, {});
   },
 };

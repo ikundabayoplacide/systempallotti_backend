@@ -70,23 +70,15 @@ const createCustomer = async (req, res, next) => {
 
     // Notify all SALESMANAGER users when a BUSINESS or BOUTIQUE customer registers
     if (customer.type === 'BUSINESS' || customer.type === 'BOUTIQUE' || customer.type === 'HOBE') {
-      const salesManagers = await User.findAll({
-        where: { role: 'SALESMANAGER', isActive: true },
-        attributes: ['id'],
+      await notify({
+        createdById: req.user.id,
+        title: 'New Customer Registered',
+        message: `A new customer "${name}"${company ? ` from ${company}` : ''} has been registered.`,
+        type: 'CUSTOMER_CREATED',
+        relatedEntityType: 'customer',
+        relatedEntityId: customer.id,
+        targetRoles: ['ADMIN', 'SALESMANAGER'],
       });
-
-      await Promise.all(
-        salesManagers.map((sm) =>
-          notify(
-            sm.id,
-            'New Business Customer Registered',
-            `A new business customer "${name}"${company ? ` from ${company}` : ''} has been registered and needs a meeting.`,
-            'GENERAL',
-            'customer',
-            customer.id
-          )
-        )
-      );
     }
 
     return success(res, customer, 'Customer created successfully.', 201);

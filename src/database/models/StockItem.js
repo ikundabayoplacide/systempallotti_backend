@@ -64,9 +64,9 @@ StockItem.init(
       allowNull: false,
     },
     type: {
-      type: DataTypes.ENUM('boutique', 'hobe', 'general'),
+      type: DataTypes.ENUM('boutique', 'hobe'),
       allowNull: false,
-      defaultValue: 'general',
+      defaultValue: 'boutique',
       comment: 'Indicates which department this stock item belongs to',
     },
   },

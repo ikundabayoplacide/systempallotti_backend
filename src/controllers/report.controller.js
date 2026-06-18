@@ -2,6 +2,7 @@ const Report = require('../database/models/Report');
 const User = require('../database/models/User');
 const { success, error, paginated } = require('../utils/apiResponse');
 const { getPagination } = require('../utils/helpers');
+const notify = require('../utils/notification.service');
 
 const reportIncludes = [
   { model: User, as: 'createdBy', attributes: ['id', 'name', 'email', 'role'] },
@@ -34,6 +35,16 @@ const createReport = async (req, res, next) => {
       notes: notes || null,
       attachmentUrl,
       createdById: req.user.id,
+    });
+
+    await notify({
+      createdById: req.user.id,
+      title: 'Report Generated',
+      message: `A new report "${title}" has been generated.${purpose ? ` Purpose: ${purpose}` : ''}`,
+      type: 'REPORT_GENERATED',
+      relatedEntityType: 'report',
+      relatedEntityId: report.id,
+      targetRoles: ['ADMIN', 'DAF'],
     });
 
     const created = await Report.findByPk(report.id, { include: reportIncludes });

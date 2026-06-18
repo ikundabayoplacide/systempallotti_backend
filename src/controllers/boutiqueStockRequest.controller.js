@@ -5,6 +5,7 @@ const BoutiqueStockMovement = require('../database/models/BoutiqueStockMovement'
 const User = require('../database/models/User');
 const { success, error, paginated } = require('../utils/apiResponse');
 const { getPagination } = require('../utils/helpers');
+const notify = require('../utils/notification.service');
 
 const requestIncludes = [
   {
@@ -124,6 +125,16 @@ const createRequest = async (req, res, next) => {
       )
     );
 
+    await notify({
+      createdById: req.user.id,
+      title: 'Boutique Stock Request Submitted',
+      message: `A new boutique stock request (${requestNumber}) has been submitted with ${items.length} item(s).`,
+      type: 'BOUTIQUE_STOCK_REQUEST',
+      relatedEntityType: 'boutiqueStockRequest',
+      relatedEntityId: request.id,
+      targetRoles: ['ADMIN', 'STOCK'],
+    });
+
     const created = await BoutiqueStockRequest.findByPk(request.id, { include: requestIncludes });
     return success(res, created, 'Stock request submitted successfully.', 201);
   } catch (err) {
@@ -170,6 +181,16 @@ const approveRequest = async (req, res, next) => {
       respondedAt: new Date(),
     });
 
+    await notify({
+      createdById: req.user.id,
+      title: 'Boutique Stock Request Approved',
+      message: `Your boutique stock request (${request.requestNumber}) has been approved.`,
+      type: 'BOUTIQUE_STOCK_REQUEST',
+      relatedEntityType: 'boutiqueStockRequest',
+      relatedEntityId: request.id,
+      targetUserIds: [request.requestedById],
+    });
+
     const updated = await BoutiqueStockRequest.findByPk(request.id, { include: requestIncludes });
     return success(res, updated, 'Request approved and boutique stock updated.');
   } catch (err) {
@@ -191,6 +212,16 @@ const rejectRequest = async (req, res, next) => {
       responseNotes: req.body.responseNotes || null,
       respondedBy: req.user.id,
       respondedAt: new Date(),
+    });
+
+    await notify({
+      createdById: req.user.id,
+      title: 'Boutique Stock Request Rejected',
+      message: `Your boutique stock request (${request.requestNumber}) has been rejected.${req.body.responseNotes ? ` Reason: ${req.body.responseNotes}` : ''}`,
+      type: 'BOUTIQUE_STOCK_REQUEST',
+      relatedEntityType: 'boutiqueStockRequest',
+      relatedEntityId: request.id,
+      targetUserIds: [request.requestedById],
     });
 
     const updated = await BoutiqueStockRequest.findByPk(request.id, { include: requestIncludes });

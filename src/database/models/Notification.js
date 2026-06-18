@@ -10,26 +10,30 @@ Notification.init(
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
-    userId: {
+    // Who triggered this notification
+    createdById: {
       type: DataTypes.UUID,
-      allowNull: false,
+      allowNull: true,
     },
     title: {
       type: DataTypes.STRING,
       allowNull: false,
-      validate: {
-        notEmpty: { msg: 'Title is required' },
-      },
+      validate: { notEmpty: { msg: 'Title is required' } },
     },
     message: {
       type: DataTypes.TEXT,
       allowNull: false,
-      validate: {
-        notEmpty: { msg: 'Message is required' },
-      },
+      validate: { notEmpty: { msg: 'Message is required' } },
     },
     type: {
       type: DataTypes.ENUM(
+        'CUSTOMER_CREATED',
+        'CUSTOMER_CHECKIN',
+        'PAYMENT_COLLECTED',
+        'JOB_DELIVERED',
+        'BOUTIQUE_STOCK_REQUEST',
+        'BOUTIQUE_PRODUCT_ADDED',
+        'REPORT_GENERATED',
         'JOB_CREATED',
         'JOB_ASSIGNED',
         'JOB_STATUS_CHANGED',
@@ -40,11 +44,6 @@ Notification.init(
       defaultValue: 'GENERAL',
       allowNull: false,
     },
-    isRead: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false,
-      allowNull: false,
-    },
     relatedEntityType: {
       type: DataTypes.STRING,
       allowNull: true,
@@ -52,6 +51,12 @@ Notification.init(
     relatedEntityId: {
       type: DataTypes.UUID,
       allowNull: true,
+    },
+    // Roles this notification was broadcast to (informational)
+    targetRoles: {
+      type: DataTypes.ARRAY(DataTypes.STRING),
+      allowNull: true,
+      defaultValue: [],
     },
   },
   {

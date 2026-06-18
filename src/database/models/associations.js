@@ -8,6 +8,7 @@ const Customer = require('./Customer');
 const Job = require('./Job');
 const Department = require('./Department');
 const Notification = require('./Notification');
+const NotificationRead = require('./NotificationRead');
 const Payment = require('./Payment');
 const BoutiqueCategory = require('./BoutiqueCategory');
 const BoutiqueProduct = require('./BoutiqueProduct');
@@ -70,9 +71,17 @@ User.hasMany(Job, { foreignKey: 'createdById', as: 'createdJobs' });
 Job.belongsTo(Department, { foreignKey: 'departmentAssignedToId', as: 'departmentAssignedTo' });
 Department.hasMany(Job, { foreignKey: 'departmentAssignedToId', as: 'jobs' });
 
-// Notification → User
-Notification.belongsTo(User, { foreignKey: 'userId', as: 'user' });
-User.hasMany(Notification, { foreignKey: 'userId', as: 'notifications' });
+// Notification → User (creator)
+Notification.belongsTo(User, { foreignKey: 'createdById', as: 'createdBy' });
+User.hasMany(Notification, { foreignKey: 'createdById', as: 'createdNotifications' });
+
+// NotificationRead → Notification
+NotificationRead.belongsTo(Notification, { foreignKey: 'notificationId', as: 'notification' });
+Notification.hasMany(NotificationRead, { foreignKey: 'notificationId', as: 'reads' });
+
+// NotificationRead → User (recipient)
+NotificationRead.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+User.hasMany(NotificationRead, { foreignKey: 'userId', as: 'notificationReads' });
 
 // Payment → Job
 Payment.belongsTo(Job, { foreignKey: 'jobId', as: 'job' });
@@ -258,4 +267,4 @@ User.hasMany(HobeSale, { foreignKey: 'soldById', as: 'hobeSales' });
 HobeSale.belongsTo(Customer, { foreignKey: 'customerId', as: 'customer' });
 Customer.hasMany(HobeSale, { foreignKey: 'customerId', as: 'hobeSales' });
 
-module.exports = { User, Customer, Job, Department, Notification, Payment, BoutiqueCategory, BoutiqueProduct, BoutiqueStockMovement, StockItem, StockEntry, StockSortie, JobItem, Quotation, CustomerVisit, Permission, RolePermission, Role, Invoice, EmployeeJobAssignment, MaterialRequest, MaterialRequestItem, BoutiqueStockRequest, BoutiqueStockRequestItem, BoutiqueSale, Report, Hobe, HobeSale, JobDocument, ProcurementLead };
+module.exports = { User, Customer, Job, Department, Notification, NotificationRead, Payment, BoutiqueCategory, BoutiqueProduct, BoutiqueStockMovement, StockItem, StockEntry, StockSortie, JobItem, Quotation, CustomerVisit, Permission, RolePermission, Role, Invoice, EmployeeJobAssignment, MaterialRequest, MaterialRequestItem, BoutiqueStockRequest, BoutiqueStockRequestItem, BoutiqueSale, Report, Hobe, HobeSale, JobDocument, ProcurementLead };
