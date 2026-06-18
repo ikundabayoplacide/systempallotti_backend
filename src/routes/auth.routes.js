@@ -9,6 +9,6 @@ const { authorize } = require('../middlewares/role.middleware');
 router.post('/register', authenticate, authorize('ADMIN'), registerValidation, validate, register);
 router.post('/login', loginValidation, validate, login);
 router.get('/me', authenticate, getMe);
-router.put('/change-password', authenticate, changePasswordValidation, validate, changePassword);
+router.post('/change-password', authenticate, changePasswordValidation, validate, changePassword);
 
 module.exports = router;

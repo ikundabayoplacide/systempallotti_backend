@@ -143,4 +143,46 @@ const deleteUser = async (req, res, next) => {
   }
 };
 
-module.exports = { createUser, getAllUsers, getUserById, updateUser, deleteUser };
+/**
+ * GET /api/users/me
+ */
+const getMyProfile = async (req, res, next) => {
+  try {
+    const user = await User.findByPk(req.user.id, {
+      attributes: ['id', 'name', 'email', 'phone', 'gender', 'role', 'departmentId', 'isActive', 'createdAt'],
+    });
+    if (!user) return error(res, 'User not found.', 404);
+    return success(res, user);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * PUT /api/users/me
+ * Only name, phone, gender are updatable by the user themselves.
+ */
+const updateMyProfile = async (req, res, next) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    if (!user) return error(res, 'User not found.', 404);
+
+    const { name, phone, gender } = req.body;
+
+    await user.update({
+      ...(name !== undefined && { name }),
+      ...(phone !== undefined && { phone }),
+      ...(gender !== undefined && { gender }),
+    });
+
+    return success(
+      res,
+      { id: user.id, name: user.name, email: user.email, phone: user.phone, gender: user.gender, role: user.role, departmentId: user.departmentId, isActive: user.isActive, createdAt: user.createdAt },
+      'Profile updated successfully.'
+    );
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { createUser, getAllUsers, getUserById, updateUser, deleteUser, getMyProfile, updateMyProfile };

@@ -39,6 +39,8 @@ Notification.init(
         'JOB_STATUS_CHANGED',
         'DEPARTMENT_ASSIGNED',
         'PAYMENT_RECEIVED',
+        'EMPLOYEE_CREATED',
+        'JOB_DAF_ACTION',
         'GENERAL'
       ),
       defaultValue: 'GENERAL',

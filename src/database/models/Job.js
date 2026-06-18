@@ -147,6 +147,17 @@ Job.init(
       allowNull: true,
       defaultValue: null,
     },
+    progress: {
+      type: DataTypes.ENUM('started', 'paused', 'resumed', 'completed'),
+      allowNull: true,
+      defaultValue: null,
+      comment: 'Worker-driven progress state: started, paused, resumed, or completed',
+    },
+    resumedAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      defaultValue: null,
+    },
     amount: {
       type: DataTypes.DECIMAL(12, 2),
       allowNull: true,

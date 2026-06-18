@@ -46,15 +46,16 @@ const assignJobToEmployee = async (req, res, next) => {
 
     await employee.update({ currentJobId: jobId });
 
-    // Notify the employee
-    await notify(
-      employee.id,
-      'Job Assigned to You',
-      `Job ${job.jobNumber} ("${job.title}") has been assigned to you by your supervisor.`,
-      'JOB_ASSIGNED',
-      'job',
-      job.id
-    );
+    // Notify the employee that a job was assigned to them
+    await notify({
+      createdById: req.user.id,
+      title: 'Job Assigned to You',
+      message: `Job ${job.jobNumber} ("${job.title}") has been assigned to you by your supervisor.`,
+      type: 'JOB_ASSIGNED',
+      relatedEntityType: 'job',
+      relatedEntityId: job.id,
+      targetUserIds: [employee.id],
+    });
 
     const updated = await User.findByPk(employee.id, {
       attributes: employeeAttrs,

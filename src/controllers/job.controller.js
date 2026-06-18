@@ -282,12 +282,12 @@ const updateJobState = async (req, res, next) => {
 
     await notify({
       createdById: req.user.id,
-      title: 'Job State Updated',
-      message: `Job ${job.jobNumber} production state changed to "${state}".`,
+      title: 'Department Work Completed',
+      message: `Job ${job.jobNumber} department stage "${state}" has been marked done by a supervisor.`,
       type: 'JOB_STATUS_CHANGED',
       relatedEntityType: 'job',
       relatedEntityId: job.id,
-      targetRoles: ['ADMIN', 'SUPERVISOR'],
+      targetRoles: ['ADMIN', 'PRODUCTION_MANAGER'],
     });
 
     return success(res, { id: job.id, jobNumber: job.jobNumber, state: job.state }, 'Job state updated.');
@@ -363,14 +363,20 @@ const assignJob = async (req, res, next) => {
 
     await job.update({ departmentAssignedToId, state: departmentToState(dept.name) });
 
+    // Notify the supervisor(s) of the target department specifically
+    const deptSupervisors = await User.findAll({
+      where: { departmentId: dept.id, role: 'SUPERVISOR', isActive: true },
+      attributes: ['id'],
+    });
     await notify({
       createdById: req.user.id,
-      title: 'Job Assigned to Department',
-      message: `Job ${job.jobNumber} has been assigned to the "${dept.name}" department.`,
+      title: 'New Job Assigned to Your Department',
+      message: `Job ${job.jobNumber} ("${job.title}") has been assigned to the "${dept.name}" department.`,
       type: 'JOB_ASSIGNED',
       relatedEntityType: 'job',
       relatedEntityId: job.id,
-      targetRoles: ['ADMIN', 'SUPERVISOR', 'PRINTEMPLOYEE'],
+      targetRoles: ['ADMIN'],
+      targetUserIds: deptSupervisors.map((u) => u.id),
     });
 
     return success(
@@ -409,14 +415,19 @@ const reassignJob = async (req, res, next) => {
 
     await job.update({ departmentAssignedToId, state: departmentToState(newDept.name) });
 
+    const newDeptSupervisors = await User.findAll({
+      where: { departmentId: newDept.id, role: 'SUPERVISOR', isActive: true },
+      attributes: ['id'],
+    });
     await notify({
       createdById: req.user.id,
-      title: 'Job Reassigned',
+      title: 'Job Reassigned to Your Department',
       message: `Job ${job.jobNumber} has been reassigned from "${previousDept?.name || 'N/A'}" to "${newDept.name}".${reason ? ` Reason: ${reason}` : ''}`,
       type: 'JOB_ASSIGNED',
       relatedEntityType: 'job',
       relatedEntityId: job.id,
-      targetRoles: ['ADMIN', 'SUPERVISOR', 'PRINTEMPLOYEE'],
+      targetRoles: ['ADMIN'],
+      targetUserIds: newDeptSupervisors.map((u) => u.id),
     });
 
     return success(
@@ -456,11 +467,11 @@ const completeJob = async (req, res, next) => {
     await notify({
       createdById: req.user.id,
       title: 'Job Completed',
-      message: `Job ${job.jobNumber} ("${job.title}") has been marked as completed.`,
+      message: `Job ${job.jobNumber} ("${job.title}") has been marked as completed and is ready for delivery.`,
       type: 'JOB_STATUS_CHANGED',
       relatedEntityType: 'job',
       relatedEntityId: job.id,
-      targetRoles: ['ADMIN', 'SUPERVISOR'],
+      targetRoles: ['ADMIN', 'RECEPTIONIST'],
     });
 
     return success(res, {
@@ -571,14 +582,17 @@ const rejectJob = async (req, res, next) => {
 
     await job.update({ status: 'rejected', rejectReason: rejectReason || null });
 
+    // If DAF is rejecting, notify the PM; otherwise notify the job creator
+    const isDaf = req.user.role === 'DAF';
     await notify({
       createdById: req.user.id,
       title: 'Job Rejected',
-      message: `Your job ${job.jobNumber} ("${job.title}") has been rejected.${rejectReason ? ` Reason: ${rejectReason}` : ''}`,
-      type: 'JOB_STATUS_CHANGED',
+      message: `Job ${job.jobNumber} ("${job.title}") has been rejected by ${req.user.name || req.user.role}.${rejectReason ? ` Reason: ${rejectReason}` : ''}`,
+      type: isDaf ? 'JOB_DAF_ACTION' : 'JOB_STATUS_CHANGED',
       relatedEntityType: 'job',
       relatedEntityId: job.id,
-      targetUserIds: [job.createdById],
+      targetRoles: isDaf ? ['ADMIN', 'PRODUCTION_MANAGER'] : [],
+      targetUserIds: isDaf ? [] : [job.createdById],
     });
 
     return success(res, { id: job.id, jobNumber: job.jobNumber, status: 'rejected', rejectReason: job.rejectReason }, 'Job rejected successfully.');
@@ -598,14 +612,17 @@ const approveJob = async (req, res, next) => {
 
     await job.update({ status: 'confirmed' });
 
+    // If DAF is confirming, notify the PM; otherwise notify the job creator
+    const isDaf = req.user.role === 'DAF';
     await notify({
       createdById: req.user.id,
-      title: 'Job Approved',
-      message: `Your job ${job.jobNumber} ("${job.title}") has been approved and is now confirmed.`,
-      type: 'JOB_STATUS_CHANGED',
+      title: 'Job Confirmed',
+      message: `Job ${job.jobNumber} ("${job.title}") has been confirmed by ${req.user.name || req.user.role}.`,
+      type: isDaf ? 'JOB_DAF_ACTION' : 'JOB_STATUS_CHANGED',
       relatedEntityType: 'job',
       relatedEntityId: job.id,
-      targetUserIds: [job.createdById],
+      targetRoles: isDaf ? ['ADMIN', 'PRODUCTION_MANAGER'] : [],
+      targetUserIds: isDaf ? [] : [job.createdById],
     });
 
     return success(res, { id: job.id, jobNumber: job.jobNumber, status: 'confirmed' }, 'Job approved successfully.');
@@ -714,8 +731,8 @@ const startJob = async (req, res, next) => {
     const job = await Job.findByPk(req.params.id);
     if (!job) return error(res, 'Job not found.', 404);
     if (job.startedAt) return error(res, 'Job already started.', 409);
-    await job.update({ startedAt: new Date(), pausedAt: null, inProduction: 'inprogress' });
-    return success(res, { id: job.id, jobNumber: job.jobNumber, startedAt: job.startedAt, inProduction: job.inProduction }, 'Job started.');
+    await job.update({ startedAt: new Date(), pausedAt: null, inProduction: 'inprogress', progress: 'started' });
+    return success(res, { id: job.id, jobNumber: job.jobNumber, startedAt: job.startedAt, inProduction: job.inProduction, progress: job.progress }, 'Job started.');
   } catch (err) { next(err); }
 };
 
@@ -726,8 +743,8 @@ const pauseJob = async (req, res, next) => {
   try {
     const job = await Job.findByPk(req.params.id);
     if (!job) return error(res, 'Job not found.', 404);
-    await job.update({ pausedAt: new Date(), inProduction: 'paused' });
-    return success(res, { id: job.id, jobNumber: job.jobNumber, pausedAt: job.pausedAt, inProduction: job.inProduction }, 'Job paused.');
+    await job.update({ pausedAt: new Date(), inProduction: 'paused', progress: 'paused' });
+    return success(res, { id: job.id, jobNumber: job.jobNumber, pausedAt: job.pausedAt, inProduction: job.inProduction, progress: job.progress }, 'Job paused.');
   } catch (err) { next(err); }
 };
 
@@ -738,8 +755,8 @@ const resumeJob = async (req, res, next) => {
   try {
     const job = await Job.findByPk(req.params.id);
     if (!job) return error(res, 'Job not found.', 404);
-    await job.update({ pausedAt: null, inProduction: 'inprogress' });
-    return success(res, { id: job.id, jobNumber: job.jobNumber, pausedAt: null, inProduction: job.inProduction }, 'Job resumed.');
+    await job.update({ pausedAt: null, resumedAt: new Date(), inProduction: 'inprogress', progress: 'resumed' });
+    return success(res, { id: job.id, jobNumber: job.jobNumber, resumedAt: job.resumedAt, inProduction: job.inProduction, progress: job.progress }, 'Job resumed.');
   } catch (err) { next(err); }
 };
 
@@ -751,8 +768,19 @@ const markJobDone = async (req, res, next) => {
     const job = await Job.findByPk(req.params.id);
     if (!job) return error(res, 'Job not found.', 404);
     if (job.inProduction === 'done') return error(res, 'Job is already marked as done.', 409);
-    await job.update({ inProduction: 'done', completedAt: new Date() });
-    return success(res, { id: job.id, jobNumber: job.jobNumber, inProduction: 'done', completedAt: job.completedAt }, 'Job marked as done.');
+    await job.update({ inProduction: 'done', completedAt: new Date(), progress: 'completed' });
+
+    await notify({
+      createdById: req.user.id,
+      title: 'Job Completed by Worker',
+      message: `Job ${job.jobNumber} has been marked as done by a worker.`,
+      type: 'JOB_STATUS_CHANGED',
+      relatedEntityType: 'job',
+      relatedEntityId: job.id,
+      targetRoles: ['ADMIN', 'SUPERVISOR'],
+    });
+
+    return success(res, { id: job.id, jobNumber: job.jobNumber, inProduction: 'done', completedAt: job.completedAt, progress: job.progress }, 'Job marked as done.');
   } catch (err) { next(err); }
 };
 

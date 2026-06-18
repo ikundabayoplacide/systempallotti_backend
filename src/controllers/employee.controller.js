@@ -2,6 +2,7 @@ const { Op } = require('sequelize');
 const Employee = require('../database/models/Employee');
 const User = require('../database/models/User');
 const Department = require('../database/models/Department');
+const notify = require('../utils/notification.service');
 const Job = require('../database/models/Job');
 const Customer = require('../database/models/Customer');
 const EmployeeJobAssignment = require('../database/models/EmployeeJobAssignment');
@@ -129,6 +130,26 @@ const createEmployee = async (req, res, next) => {
       departmentId: departmentId || null,
       userId,
     });
+
+    // Notify the supervisor(s) of the assigned department (if any)
+    if (departmentId) {
+      const supervisors = await User.findAll({
+        where: { departmentId, role: 'SUPERVISOR', isActive: true },
+        attributes: ['id'],
+      });
+      if (supervisors.length > 0) {
+        await notify({
+          createdById: req.user.id,
+          title: 'New Employee Added to Your Department',
+          message: `A new employee "${fullName}" has been registered and assigned to your department.`,
+          type: 'EMPLOYEE_CREATED',
+          relatedEntityType: 'employee',
+          relatedEntityId: employee.id,
+          targetRoles: ['ADMIN'],
+          targetUserIds: supervisors.map((u) => u.id),
+        });
+      }
+    }
 
     const created = await Employee.findByPk(employee.id, { include: employeeIncludes });
     return success(res, created, 'Employee created successfully.', 201);

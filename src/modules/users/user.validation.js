@@ -29,4 +29,10 @@ const updateUserValidation = [
   body('isActive').optional().isBoolean().withMessage('isActive must be a boolean'),
 ];
 
-module.exports = { createUserValidation, updateUserValidation };
+const updateMyProfileValidation = [
+  body('name').optional().trim().notEmpty().withMessage('Name cannot be empty'),
+  body('phone').optional().isLength({ min: 7, max: 20 }).withMessage('Phone must be between 7 and 20 characters'),
+  body('gender').optional().isIn(GENDERS).withMessage('Gender must be MALE, FEMALE, or OTHER'),
+];
+
+module.exports = { createUserValidation, updateUserValidation, updateMyProfileValidation };

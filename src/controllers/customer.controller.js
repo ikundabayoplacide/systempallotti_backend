@@ -77,7 +77,7 @@ const createCustomer = async (req, res, next) => {
         type: 'CUSTOMER_CREATED',
         relatedEntityType: 'customer',
         relatedEntityId: customer.id,
-        targetRoles: ['ADMIN', 'SALESMANAGER'],
+        targetRoles: ['ADMIN', 'SALES'],
       });
     }
 

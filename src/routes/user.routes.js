@@ -1,10 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const { getAllUsers, getUserById, createUser, updateUser, deleteUser } = require('../controllers/user.controller');
-const { createUserValidation, updateUserValidation } = require('../modules/users/user.validation');
+const { getAllUsers, getUserById, createUser, updateUser, deleteUser, getMyProfile, updateMyProfile } = require('../controllers/user.controller');
+const { createUserValidation, updateUserValidation, updateMyProfileValidation } = require('../modules/users/user.validation');
 const { validate } = require('../middlewares/validate.middleware');
 const { authenticate } = require('../middlewares/auth.middleware');
 const { authorize } = require('../middlewares/role.middleware');
+
+// Self-service profile routes (any authenticated role)
+router.get('/me', authenticate, getMyProfile);
+router.put('/me', authenticate, updateMyProfileValidation, validate, updateMyProfile);
 
 router.get('/', getAllUsers);
 router.post('/', createUserValidation, validate, createUser);
