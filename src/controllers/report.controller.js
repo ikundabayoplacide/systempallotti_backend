@@ -1,3 +1,4 @@
+const { Op } = require('sequelize');
 const Report = require('../database/models/Report');
 const User = require('../database/models/User');
 const { success, error, paginated } = require('../utils/apiResponse');
@@ -24,6 +25,18 @@ const createReport = async (req, res, next) => {
       }
     }
 
+    let visibleTo = null;
+    if (req.body.visibleTo) {
+      try {
+        visibleTo = typeof req.body.visibleTo === 'string' ? JSON.parse(req.body.visibleTo) : req.body.visibleTo;
+        if (!Array.isArray(visibleTo) || visibleTo.length === 0) {
+          return error(res, 'visibleTo must be a non-empty array of role names.', 400);
+        }
+      } catch {
+        return error(res, 'Invalid visibleTo format. Must be a JSON array.', 400);
+      }
+    }
+
     const attachmentUrl = req.file
       ? `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`
       : null;
@@ -35,6 +48,7 @@ const createReport = async (req, res, next) => {
       notes: notes || null,
       attachmentUrl,
       createdById: req.user.id,
+      visibleTo,
     });
 
     await notify({
@@ -44,7 +58,7 @@ const createReport = async (req, res, next) => {
       type: 'REPORT_GENERATED',
       relatedEntityType: 'report',
       relatedEntityId: report.id,
-      targetRoles: ['ADMIN', 'DAF'],
+      targetRoles: visibleTo || ['ADMIN'],
     });
 
     const created = await Report.findByPk(report.id, { include: reportIncludes });
@@ -56,6 +70,7 @@ const createReport = async (req, res, next) => {
 
 /**
  * GET /api/reports/my
+ * Returns only reports created by the user
  */
 const getMyReports = async (req, res, next) => {
   try {
@@ -77,12 +92,25 @@ const getMyReports = async (req, res, next) => {
 
 /**
  * GET /api/reports
+ * Returns all reports that the user's role can view
  */
 const getAllReports = async (req, res, next) => {
   try {
     const { page, limit, skip } = getPagination(req.query);
+    const userRole = req.user.role;
+
+    // Admin can see all reports
+    const whereCondition = userRole === 'ADMIN' 
+      ? {} 
+      : {
+          [Op.or]: [
+            { visibleTo: { [Op.contains]: [userRole] } },
+            { visibleTo: null }, // legacy reports with no visibility set
+          ],
+        };
 
     const { count, rows } = await Report.findAndCountAll({
+      where: whereCondition,
       offset: skip,
       limit,
       order: [['createdAt', 'DESC']],
@@ -100,8 +128,24 @@ const getAllReports = async (req, res, next) => {
  */
 const getReportById = async (req, res, next) => {
   try {
-    const report = await Report.findByPk(req.params.id, { include: reportIncludes });
-    if (!report) return error(res, 'Report not found.', 404);
+    const userRole = req.user.role;
+    
+    // Build where condition to check visibility
+    const whereCondition = { id: req.params.id };
+    if (userRole !== 'ADMIN') {
+      whereCondition[Op.or] = [
+        { visibleTo: { [Op.contains]: [userRole] } },
+        { visibleTo: null }, // legacy reports
+        { createdById: req.user.id }, // creator can always see their own reports
+      ];
+    }
+
+    const report = await Report.findOne({ 
+      where: whereCondition,
+      include: reportIncludes 
+    });
+    
+    if (!report) return error(res, 'Report not found or you do not have permission to view it.', 404);
     return success(res, report);
   } catch (err) {
     next(err);
@@ -116,6 +160,11 @@ const updateReport = async (req, res, next) => {
     const report = await Report.findByPk(req.params.id);
     if (!report) return error(res, 'Report not found.', 404);
 
+    // Only the creator can update the report
+    if (report.createdById !== req.user.id && req.user.role !== 'ADMIN') {
+      return error(res, 'You can only update reports you created.', 403);
+    }
+
     const { title, purpose, notes } = req.body;
 
     let items = report.items;
@@ -124,6 +173,22 @@ const updateReport = async (req, res, next) => {
         items = typeof req.body.items === 'string' ? JSON.parse(req.body.items) : req.body.items;
       } catch {
         return error(res, 'Invalid items format. Must be a JSON array.', 400);
+      }
+    }
+
+    let visibleTo = report.visibleTo;
+    if (req.body.visibleTo !== undefined) {
+      if (req.body.visibleTo) {
+        try {
+          visibleTo = typeof req.body.visibleTo === 'string' ? JSON.parse(req.body.visibleTo) : req.body.visibleTo;
+          if (!Array.isArray(visibleTo) || visibleTo.length === 0) {
+            return error(res, 'visibleTo must be a non-empty array of role names.', 400);
+          }
+        } catch {
+          return error(res, 'Invalid visibleTo format. Must be a JSON array.', 400);
+        }
+      } else {
+        visibleTo = null;
       }
     }
 
@@ -137,6 +202,7 @@ const updateReport = async (req, res, next) => {
       ...(notes !== undefined && { notes }),
       items,
       attachmentUrl,
+      visibleTo,
     });
 
     const updated = await Report.findByPk(report.id, { include: reportIncludes });
@@ -160,4 +226,30 @@ const deleteReport = async (req, res, next) => {
   }
 };
 
-module.exports = { createReport, getAllReports, getReportById, updateReport, deleteReport, getMyReports };
+/**
+ * GET /api/reports/assigned
+ * Returns only reports where the user's role is in visibleTo (excludes own reports)
+ */
+const getAssignedReports = async (req, res, next) => {
+  try {
+    const { page, limit, skip } = getPagination(req.query);
+    const userRole = req.user.role;
+
+    const { count, rows } = await Report.findAndCountAll({
+      where: {
+        visibleTo: { [Op.contains]: [userRole] },
+        createdById: { [Op.ne]: req.user.id }, // exclude own reports
+      },
+      offset: skip,
+      limit,
+      order: [['createdAt', 'DESC']],
+      include: reportIncludes,
+    });
+
+    return paginated(res, rows, count, page, limit);
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { createReport, getAllReports, getReportById, updateReport, deleteReport, getMyReports, getAssignedReports };

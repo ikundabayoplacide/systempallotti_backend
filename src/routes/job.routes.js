@@ -6,6 +6,7 @@ const {
   getJobByNumber,
   getAllJobs,
   getJobById,
+  getJobDetails,
   createJob,
   updateJob,
   updateJobStatus,
@@ -58,6 +59,7 @@ router.post('/', authorize('ADMIN', 'RECEPTIONIST', 'SALES'), upload.array('docu
 router.use('/:jobId/documents', jobDocumentRoutes);
 
 // Single job CRUD
+router.get('/:id/details', getJobDetails);
 router.get('/:id', getJobById);
 router.put('/:id', authorize('ADMIN', 'RECEPTIONIST', 'SALES', 'PRODUCTION_MANAGER'), updateJobValidation, validate, updateJob);
 router.delete('/:id', authorize('ADMIN'), deleteJob);

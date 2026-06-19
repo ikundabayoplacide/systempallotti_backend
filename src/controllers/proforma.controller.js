@@ -1,5 +1,5 @@
 const { Op } = require('sequelize');
-const Quotation = require('../database/models/Quotation');
+const Proforma = require('../database/models/Proforma');
 const Job = require('../database/models/Job');
 const Customer = require('../database/models/Customer');
 const User = require('../database/models/User');
@@ -8,7 +8,7 @@ const StockItem = require('../database/models/StockItem');
 const { success, error, paginated } = require('../utils/apiResponse');
 const { getPagination } = require('../utils/helpers');
 
-const quotationIncludes = [
+const proformaIncludes = [
   { model: Job, as: 'job', attributes: ['id', 'jobNumber', 'title', 'status', 'jobType', 'quantity', 'size', 'colorMode', 'bindingType', 'dueDate'],
     include: [
       { model: JobItem, as: 'jobItems', include: [{ model: StockItem, as: 'stockItem', attributes: ['id', 'itemName', 'unit', 'unitCost'] }] },
@@ -19,9 +19,9 @@ const quotationIncludes = [
 ];
 
 /**
- * GET /api/quotations
+ * GET /api/proformas
  */
-const getAllQuotations = async (req, res, next) => {
+const getAllProformas = async (req, res, next) => {
   try {
     const { page, limit, skip } = getPagination(req.query);
     const { status, customerId, search } = req.query;
@@ -31,16 +31,16 @@ const getAllQuotations = async (req, res, next) => {
     if (customerId) where.customerId = customerId;
     if (search) {
       where[Op.or] = [
-        { quotationNo: { [Op.iLike]: `%${search}%` } },
+        { proformaNo: { [Op.iLike]: `%${search}%` } },
       ];
     }
 
-    const { count, rows } = await Quotation.findAndCountAll({
+    const { count, rows } = await Proforma.findAndCountAll({
       where,
       offset: skip,
       limit,
       order: [['createdAt', 'DESC']],
-      include: quotationIncludes,
+      include: proformaIncludes,
     });
 
     return paginated(res, rows, count, page, limit);
@@ -50,43 +50,43 @@ const getAllQuotations = async (req, res, next) => {
 };
 
 /**
- * GET /api/quotations/:id
+ * GET /api/proformas/:id
  */
-const getQuotationById = async (req, res, next) => {
+const getProformaById = async (req, res, next) => {
   try {
-    const quotation = await Quotation.findByPk(req.params.id, { include: quotationIncludes });
-    if (!quotation) return error(res, 'Quotation not found.', 404);
-    return success(res, quotation);
+    const proforma = await Proforma.findByPk(req.params.id, { include: proformaIncludes });
+    if (!proforma) return error(res, 'Proforma not found.', 404);
+    return success(res, proforma);
   } catch (err) {
     next(err);
   }
 };
 
 /**
- * GET /api/quotations/job/:jobId
+ * GET /api/proformas/job/:jobId
  */
-const getQuotationsByJob = async (req, res, next) => {
+const getProformasByJob = async (req, res, next) => {
   try {
     const job = await Job.findByPk(req.params.jobId);
     if (!job) return error(res, 'Job not found.', 404);
 
-    const quotations = await Quotation.findAll({
+    const proformas = await Proforma.findAll({
       where: { jobId: req.params.jobId },
       order: [['createdAt', 'DESC']],
-      include: quotationIncludes,
+      include: proformaIncludes,
     });
 
-    return success(res, quotations);
+    return success(res, proformas);
   } catch (err) {
     next(err);
   }
 };
 
 /**
- * POST /api/quotations
- * Create a quotation manually or auto-called from job creation.
+ * POST /api/proformas
+ * Create a proforma manually or auto-called from job creation.
  */
-const createQuotation = async (req, res, next) => {
+const createProforma = async (req, res, next) => {
   try {
     const { jobId, subtotal, validUntil, notes, terms } = req.body;
 
@@ -97,10 +97,10 @@ const createQuotation = async (req, res, next) => {
 
     const sub = parseFloat(subtotal || job.amount || 0);
 
-    const quotationNo = await Quotation.generateQuotationNo();
+    const proformaNo = await Proforma.generateProformaNo();
 
-    const quotation = await Quotation.create({
-      quotationNo,
+    const proforma = await Proforma.create({
+      proformaNo,
       jobId,
       customerId: job.customerId,
       createdById: req.user.id,
@@ -115,35 +115,35 @@ const createQuotation = async (req, res, next) => {
       terms: terms || null,
     });
 
-    const created = await Quotation.findByPk(quotation.id, { include: quotationIncludes });
-    return success(res, created, 'Quotation created successfully.', 201);
+    const created = await Proforma.findByPk(proforma.id, { include: proformaIncludes });
+    return success(res, created, 'Proforma created successfully.', 201);
   } catch (err) {
     next(err);
   }
 };
 
 /**
- * PUT /api/quotations/:id
- * Update quotation details (only if draft).
+ * PUT /api/proformas/:id
+ * Update proforma details (only if draft).
  */
-const updateQuotation = async (req, res, next) => {
+const updateProforma = async (req, res, next) => {
   try {
-    const quotation = await Quotation.findByPk(req.params.id);
-    if (!quotation) return error(res, 'Quotation not found.', 404);
+    const proforma = await Proforma.findByPk(req.params.id);
+    if (!proforma) return error(res, 'Proforma not found.', 404);
 
-    if (quotation.status !== 'draft') {
-      return error(res, `Cannot edit a quotation with status "${quotation.status}". Only draft quotations can be edited.`, 422);
+    if (proforma.status !== 'draft') {
+      return error(res, `Cannot edit a proforma with status "${proforma.status}". Only draft proformas can be edited.`, 422);
     }
 
     const { subtotal, taxRate, discount, validUntil, notes, terms } = req.body;
 
-    const sub = parseFloat(subtotal !== undefined ? subtotal : quotation.subtotal);
-    const tax = parseFloat(taxRate !== undefined ? taxRate : quotation.taxRate);
-    const disc = parseFloat(discount !== undefined ? discount : quotation.discount);
+    const sub = parseFloat(subtotal !== undefined ? subtotal : proforma.subtotal);
+    const tax = parseFloat(taxRate !== undefined ? taxRate : proforma.taxRate);
+    const disc = parseFloat(discount !== undefined ? discount : proforma.discount);
     const taxAmount = parseFloat(((sub * tax) / 100).toFixed(2));
     const totalAmount = parseFloat((sub + taxAmount - disc).toFixed(2));
 
-    await quotation.update({
+    await proforma.update({
       subtotal: sub,
       taxRate: tax,
       taxAmount,
@@ -154,21 +154,21 @@ const updateQuotation = async (req, res, next) => {
       ...(terms !== undefined && { terms }),
     });
 
-    const updated = await Quotation.findByPk(quotation.id, { include: quotationIncludes });
-    return success(res, updated, 'Quotation updated successfully.');
+    const updated = await Proforma.findByPk(proforma.id, { include: proformaIncludes });
+    return success(res, updated, 'Proforma updated successfully.');
   } catch (err) {
     next(err);
   }
 };
 
 /**
- * PATCH /api/quotations/:id/status
- * Update quotation status.
+ * PATCH /api/proformas/:id/status
+ * Update proforma status.
  */
-const updateQuotationStatus = async (req, res, next) => {
+const updateProformaStatus = async (req, res, next) => {
   try {
-    const quotation = await Quotation.findByPk(req.params.id);
-    if (!quotation) return error(res, 'Quotation not found.', 404);
+    const proforma = await Proforma.findByPk(req.params.id);
+    if (!proforma) return error(res, 'Proforma not found.', 404);
 
     const { status } = req.body;
     const validStatuses = ['draft', 'sent', 'accepted', 'rejected', 'expired'];
@@ -176,39 +176,39 @@ const updateQuotationStatus = async (req, res, next) => {
       return error(res, `Invalid status. Must be one of: ${validStatuses.join(', ')}.`, 400);
     }
 
-    await quotation.update({ status });
-    return success(res, { id: quotation.id, quotationNo: quotation.quotationNo, status }, 'Quotation status updated.');
+    await proforma.update({ status });
+    return success(res, { id: proforma.id, proformaNo: proforma.proformaNo, status }, 'Proforma status updated.');
   } catch (err) {
     next(err);
   }
 };
 
 /**
- * DELETE /api/quotations/:id
- * Delete a quotation (only draft).
+ * DELETE /api/proformas/:id
+ * Delete a proforma (only draft).
  */
-const deleteQuotation = async (req, res, next) => {
+const deleteProforma = async (req, res, next) => {
   try {
-    const quotation = await Quotation.findByPk(req.params.id);
-    if (!quotation) return error(res, 'Quotation not found.', 404);
+    const proforma = await Proforma.findByPk(req.params.id);
+    if (!proforma) return error(res, 'Proforma not found.', 404);
 
-    if (quotation.status !== 'draft') {
-      return error(res, 'Only draft quotations can be deleted.', 422);
+    if (proforma.status !== 'draft') {
+      return error(res, 'Only draft proformas can be deleted.', 422);
     }
 
-    await quotation.destroy();
-    return success(res, null, 'Quotation deleted successfully.');
+    await proforma.destroy();
+    return success(res, null, 'Proforma deleted successfully.');
   } catch (err) {
     next(err);
   }
 };
 
 module.exports = {
-  getAllQuotations,
-  getQuotationById,
-  getQuotationsByJob,
-  createQuotation,
-  updateQuotation,
-  updateQuotationStatus,
-  deleteQuotation,
+  getAllProformas,
+  getProformaById,
+  getProformasByJob,
+  createProforma,
+  updateProforma,
+  updateProformaStatus,
+  deleteProforma,
 };

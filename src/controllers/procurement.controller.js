@@ -1,5 +1,6 @@
 const { Op } = require('sequelize');
 const ProcurementLead = require('../database/models/ProcurementLead');
+const ProcurementLeadDocument = require('../database/models/ProcurementLeadDocument');
 const User = require('../database/models/User');
 const { success, error, paginated } = require('../utils/apiResponse');
 const { getPagination } = require('../utils/helpers');
@@ -8,6 +9,7 @@ const STAGES = ['prospect', 'contacted', 'negotiating', 'won', 'lost'];
 
 const leadIncludes = [
   { model: User, as: 'createdBy', attributes: ['id', 'name', 'email', 'role'] },
+  { model: ProcurementLeadDocument, as: 'documents', attributes: ['id', 'fileName', 'mimeType', 'fileUrl', 'uploadedById', 'createdAt'] },
 ];
 
 /**
@@ -119,6 +121,20 @@ const createLead = async (req, res, next) => {
       createdById: req.user.id,
     });
 
+    if (req.files && req.files.length > 0) {
+      await Promise.all(
+        req.files.map((file) =>
+          ProcurementLeadDocument.create({
+            procurementLeadId: lead.id,
+            uploadedById: req.user.id,
+            fileName: file.originalname,
+            mimeType: file.mimetype,
+            fileUrl: `data:${file.mimetype};base64,${file.buffer.toString('base64')}`,
+          })
+        )
+      );
+    }
+
     const created = await ProcurementLead.findByPk(lead.id, { include: leadIncludes });
     return success(res, created, 'Lead created successfully.', 201);
   } catch (err) {
@@ -148,6 +164,20 @@ const updateLead = async (req, res, next) => {
       ...(nextFollowUp !== undefined && { nextFollowUp }),
       ...(notes !== undefined && { notes }),
     });
+
+    if (req.files && req.files.length > 0) {
+      await Promise.all(
+        req.files.map((file) =>
+          ProcurementLeadDocument.create({
+            procurementLeadId: lead.id,
+            uploadedById: req.user.id,
+            fileName: file.originalname,
+            mimeType: file.mimetype,
+            fileUrl: `data:${file.mimetype};base64,${file.buffer.toString('base64')}`,
+          })
+        )
+      );
+    }
 
     const updated = await ProcurementLead.findByPk(lead.id, { include: leadIncludes });
     return success(res, updated, 'Lead updated successfully.');

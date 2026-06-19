@@ -6,8 +6,10 @@ const Department = require('../database/models/Department');
 const Payment = require('../database/models/Payment');
 const JobItem = require('../database/models/JobItem');
 const StockItem = require('../database/models/StockItem');
-const Quotation = require('../database/models/Quotation');
+const Proforma = require('../database/models/Proforma');
 const JobDocument = require('../database/models/JobDocument');
+const Employee = require('../database/models/Employee');
+const EmployeeJobAssignment = require('../database/models/EmployeeJobAssignment');
 const { success, error, paginated } = require('../utils/apiResponse');
 const { getPagination } = require('../utils/helpers');
 const notify = require('../utils/notification.service');
@@ -94,6 +96,54 @@ const getJobById = async (req, res, next) => {
     const job = await Job.findByPk(req.params.id, { include: jobIncludes });
     if (!job) return error(res, 'Job not found.', 404);
     return success(res, job);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * GET /api/jobs/:id/details
+ * Full job details: department position, assigned workers, supervisor(s), progress state.
+ */
+const getJobDetails = async (req, res, next) => {
+  try {
+    const job = await Job.findByPk(req.params.id, {
+      include: [
+        ...jobIncludes,
+        {
+          model: Employee,
+          as: 'assignedWorkers',
+          attributes: ['id', 'fullName', 'phoneNumber', 'contractType'],
+          through: { model: EmployeeJobAssignment, attributes: ['assignedAt'] },
+          include: [{ model: Department, as: 'department', attributes: ['id', 'name'] }],
+        },
+      ],
+    });
+    if (!job) return error(res, 'Job not found.', 404);
+
+    // Fetch supervisors of the assigned department
+    let supervisors = [];
+    if (job.departmentAssignedToId) {
+      supervisors = await User.findAll({
+        where: { departmentId: job.departmentAssignedToId, role: 'SUPERVISOR', isActive: true },
+        attributes: ['id', 'name', 'phone', 'email'],
+      });
+    }
+
+    return success(res, {
+      ...job.toJSON(),
+      departmentPosition: {
+        department: job.departmentAssignedTo || null,
+        supervisors,
+        state: job.state,
+        inProduction: job.inProduction,
+        progress: job.progress,
+        startedAt: job.startedAt,
+        pausedAt: job.pausedAt,
+        resumedAt: job.resumedAt,
+        completedAt: job.completedAt,
+      },
+    });
   } catch (err) {
     next(err);
   }
@@ -192,11 +242,11 @@ const createJob = async (req, res, next) => {
       );
     }
 
-    // Auto-create a draft quotation
-    const quotationNo = await Quotation.generateQuotationNo();
+    // Auto-create a draft proforma
+    const proformaNo = await Proforma.generateProformaNo();
     const sub = parseFloat(amount || 0);
-    await Quotation.create({
-      quotationNo,
+    await Proforma.create({
+      proformaNo,
       jobId: job.id,
       customerId: job.customerId,
       createdById: req.user.id,
@@ -789,6 +839,7 @@ module.exports = {
   getJobByNumber,
   getAllJobs,
   getJobById,
+  getJobDetails,
   createJob,
   updateJob,
   updateJobStatus,

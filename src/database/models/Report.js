@@ -37,6 +37,12 @@ Report.init(
       allowNull: false,
       field: 'created_by_id',
     },
+    visibleTo: {
+      type: DataTypes.JSONB,
+      allowNull: true,
+      field: 'visible_to',
+      defaultValue: null,
+    },
   },
   {
     sequelize,

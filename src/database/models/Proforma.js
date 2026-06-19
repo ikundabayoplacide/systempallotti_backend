@@ -1,37 +1,37 @@
 const { DataTypes, Model, Op } = require('sequelize');
 const { sequelize } = require('../../config/database');
 
-class Quotation extends Model {
-  static async generateQuotationNo() {
+class Proforma extends Model {
+  static async generateProformaNo() {
     const year = new Date().getFullYear();
-    const last = await Quotation.findOne({
-      where: { quotationNo: { [Op.like]: `QT-${year}-%` } },
+    const last = await Proforma.findOne({
+      where: { proformaNo: { [Op.like]: `PF-${year}-%` } },
       order: [['createdAt', 'DESC']],
     });
 
     let nextNumber = 1;
     if (last) {
-      const parts = last.quotationNo.split('-');
+      const parts = last.proformaNo.split('-');
       const lastSeq = parseInt(parts[2], 10);
       if (!isNaN(lastSeq)) nextNumber = lastSeq + 1;
     }
 
-    return `QT-${year}-${String(nextNumber).padStart(3, '0')}`;
+    return `PF-${year}-${String(nextNumber).padStart(3, '0')}`;
   }
 }
 
-Quotation.init(
+Proforma.init(
   {
     id: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
     },
-    quotationNo: {
+    proformaNo: {
       type: DataTypes.STRING,
       allowNull: false,
       unique: true,
-      comment: 'Auto-generated e.g. QT-2026-001',
+      comment: 'Auto-generated e.g. PF-2026-001',
     },
     jobId: {
       type: DataTypes.UUID,
@@ -83,7 +83,7 @@ Quotation.init(
     validUntil: {
       type: DataTypes.DATE,
       allowNull: true,
-      comment: 'Expiry date of the quotation',
+      comment: 'Expiry date of the proforma',
     },
     notes: {
       type: DataTypes.TEXT,
@@ -92,15 +92,15 @@ Quotation.init(
     terms: {
       type: DataTypes.TEXT,
       allowNull: true,
-      comment: 'Terms and conditions for this quotation',
+      comment: 'Terms and conditions for this proforma',
     },
   },
   {
     sequelize,
-    modelName: 'Quotation',
-    tableName: 'quotations',
+    modelName: 'Proforma',
+    tableName: 'proformas',
     timestamps: true,
   }
 );
 
-module.exports = Quotation;
+module.exports = Proforma;

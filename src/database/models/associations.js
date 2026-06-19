@@ -17,7 +17,7 @@ const StockItem = require('./StockItem');
 const StockEntry = require('./StockEntry');
 const StockSortie = require('./StockSortie');
 const JobItem = require('./JobItem');
-const Quotation = require('./Quotation');
+const Proforma = require('./Proforma');
 const CustomerVisit = require('./CustomerVisit');
 const Permission = require('./Permission');
 const RolePermission = require('./RolePermission');
@@ -35,9 +35,18 @@ const Hobe = require('./Hobe');
 const HobeSale = require('./HobeSale');
 const JobDocument = require('./JobDocument');
 const ProcurementLead = require('./ProcurementLead');
+const ProcurementLeadDocument = require('./ProcurementLeadDocument');
 // ProcurementLead → User (created by)
 ProcurementLead.belongsTo(User, { foreignKey: 'createdById', as: 'createdBy' });
 User.hasMany(ProcurementLead, { foreignKey: 'createdById', as: 'procurementLeads' });
+
+// ProcurementLeadDocument → ProcurementLead
+ProcurementLeadDocument.belongsTo(ProcurementLead, { foreignKey: 'procurementLeadId', as: 'lead' });
+ProcurementLead.hasMany(ProcurementLeadDocument, { foreignKey: 'procurementLeadId', as: 'documents' });
+
+// ProcurementLeadDocument → User (uploaded by)
+ProcurementLeadDocument.belongsTo(User, { foreignKey: 'uploadedById', as: 'uploadedBy' });
+User.hasMany(ProcurementLeadDocument, { foreignKey: 'uploadedById', as: 'procurementDocuments' });
 
 // JobDocument → Job
 JobDocument.belongsTo(Job, { foreignKey: 'jobId', as: 'job' });
@@ -143,17 +152,17 @@ Job.hasMany(JobItem, { foreignKey: 'jobId', as: 'jobItems' });
 JobItem.belongsTo(StockItem, { foreignKey: 'stockItemId', as: 'stockItem' });
 StockItem.hasMany(JobItem, { foreignKey: 'stockItemId', as: 'jobItems' });
 
-// Quotation → Job
-Quotation.belongsTo(Job, { foreignKey: 'jobId', as: 'job' });
-Job.hasMany(Quotation, { foreignKey: 'jobId', as: 'quotations' });
+// Proforma → Job
+Proforma.belongsTo(Job, { foreignKey: 'jobId', as: 'job' });
+Job.hasMany(Proforma, { foreignKey: 'jobId', as: 'proformas' });
 
-// Quotation → Customer
-Quotation.belongsTo(Customer, { foreignKey: 'customerId', as: 'customer' });
-Customer.hasMany(Quotation, { foreignKey: 'customerId', as: 'quotations' });
+// Proforma → Customer
+Proforma.belongsTo(Customer, { foreignKey: 'customerId', as: 'customer' });
+Customer.hasMany(Proforma, { foreignKey: 'customerId', as: 'proformas' });
 
-// Quotation → User (created by)
-Quotation.belongsTo(User, { foreignKey: 'createdById', as: 'createdBy' });
-User.hasMany(Quotation, { foreignKey: 'createdById', as: 'quotations' });
+// Proforma → User (created by)
+Proforma.belongsTo(User, { foreignKey: 'createdById', as: 'createdBy' });
+User.hasMany(Proforma, { foreignKey: 'createdById', as: 'proformas' });
 
 // CustomerVisit → Customer
 CustomerVisit.belongsTo(Customer, { foreignKey: 'customerId', as: 'customer' });
@@ -267,4 +276,4 @@ User.hasMany(HobeSale, { foreignKey: 'soldById', as: 'hobeSales' });
 HobeSale.belongsTo(Customer, { foreignKey: 'customerId', as: 'customer' });
 Customer.hasMany(HobeSale, { foreignKey: 'customerId', as: 'hobeSales' });
 
-module.exports = { User, Customer, Job, Department, Notification, NotificationRead, Payment, BoutiqueCategory, BoutiqueProduct, BoutiqueStockMovement, StockItem, StockEntry, StockSortie, JobItem, Quotation, CustomerVisit, Permission, RolePermission, Role, Invoice, EmployeeJobAssignment, MaterialRequest, MaterialRequestItem, BoutiqueStockRequest, BoutiqueStockRequestItem, BoutiqueSale, Report, Hobe, HobeSale, JobDocument, ProcurementLead };
+module.exports = { User, Customer, Job, Department, Notification, NotificationRead, Payment, BoutiqueCategory, BoutiqueProduct, BoutiqueStockMovement, StockItem, StockEntry, StockSortie, JobItem, Proforma, CustomerVisit, Permission, RolePermission, Role, Invoice, EmployeeJobAssignment, MaterialRequest, MaterialRequestItem, BoutiqueStockRequest, BoutiqueStockRequestItem, BoutiqueSale, Report, Hobe, HobeSale, JobDocument, ProcurementLead, ProcurementLeadDocument };

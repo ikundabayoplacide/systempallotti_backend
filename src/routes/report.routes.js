@@ -3,7 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const env = require('../config/env');
 
-const { createReport, getAllReports, getReportById, updateReport, deleteReport, getMyReports } = require('../controllers/report.controller');
+const { createReport, getAllReports, getReportById, updateReport, deleteReport, getMyReports, getAssignedReports } = require('../controllers/report.controller');
 const { authenticate } = require('../middlewares/auth.middleware');
 
 const allowedMimes = [
@@ -29,6 +29,7 @@ const upload = multer({
 
 router.use(authenticate);
 
+router.get('/assigned', getAssignedReports);
 router.get('/my', getMyReports);
 router.get('/', getAllReports);
 router.get('/:id', getReportById);
