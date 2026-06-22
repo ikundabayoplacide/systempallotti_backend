@@ -38,6 +38,7 @@ const ProcurementLead = require('./ProcurementLead');
 const ProcurementLeadDocument = require('./ProcurementLeadDocument');
 const RecoveryRecord = require('./RecoveryRecord');
 const LeaveRequest = require('./LeaveRequest');
+const Outstand = require('./Outstand');
 // ProcurementLead → User (created by)
 ProcurementLead.belongsTo(User, { foreignKey: 'createdById', as: 'createdBy' });
 User.hasMany(ProcurementLead, { foreignKey: 'createdById', as: 'procurementLeads' });
@@ -298,4 +299,12 @@ User.hasMany(LeaveRequest, { foreignKey: 'userId', as: 'leaveRequests' });
 LeaveRequest.belongsTo(User, { foreignKey: 'reviewedById', as: 'reviewedBy' });
 User.hasMany(LeaveRequest, { foreignKey: 'reviewedById', as: 'reviewedLeaves' });
 
-module.exports = { User, Customer, Job, Department, Notification, NotificationRead, Payment, BoutiqueCategory, BoutiqueProduct, BoutiqueStockMovement, StockItem, StockEntry, StockSortie, JobItem, Proforma, CustomerVisit, Permission, RolePermission, Role, Invoice, EmployeeJobAssignment, MaterialRequest, MaterialRequestItem, BoutiqueStockRequest, BoutiqueStockRequestItem, BoutiqueSale, Report, Hobe, HobeSale, JobDocument, ProcurementLead, ProcurementLeadDocument, RecoveryRecord };
+// Outstand → User (recorded by)
+Outstand.belongsTo(User, { foreignKey: 'recordedById', as: 'recordedBy' });
+User.hasMany(Outstand, { foreignKey: 'recordedById', as: 'recordedOutstands' });
+
+// Outstand → User (approved by)
+Outstand.belongsTo(User, { foreignKey: 'approvedById', as: 'approvedBy' });
+User.hasMany(Outstand, { foreignKey: 'approvedById', as: 'approvedOutstands' });
+
+module.exports = { User, Customer, Job, Department, Notification, NotificationRead, Payment, BoutiqueCategory, BoutiqueProduct, BoutiqueStockMovement, StockItem, StockEntry, StockSortie, JobItem, Proforma, CustomerVisit, Permission, RolePermission, Role, Invoice, EmployeeJobAssignment, MaterialRequest, MaterialRequestItem, BoutiqueStockRequest, BoutiqueStockRequestItem, BoutiqueSale, Report, Hobe, HobeSale, JobDocument, ProcurementLead, ProcurementLeadDocument, RecoveryRecord, Outstand };

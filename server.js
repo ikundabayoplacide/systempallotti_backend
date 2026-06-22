@@ -43,6 +43,7 @@ const hobeRoutes = require('./src/routes/hobe.routes');
 const procurementRoutes = require('./src/routes/procurement.routes');
 const recoveryRoutes = require('./src/routes/recovery.routes');
 const leaveRoutes = require('./src/routes/leave.routes');
+const outstandRoutes = require('./src/routes/outstand.routes');
 
 const app = express();
 
@@ -94,6 +95,7 @@ app.use('/api/hobes', hobeRoutes);
 app.use('/api/procurement', procurementRoutes);
 app.use('/api/recovery', recoveryRoutes);
 app.use('/api/leaves', leaveRoutes);
+app.use('/api/outstands', outstandRoutes);
 
 // 404 handler
 app.use(notFound);
