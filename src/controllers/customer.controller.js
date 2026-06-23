@@ -69,6 +69,10 @@ const createCustomer = async (req, res, next) => {
 
     // Notify all SALESMANAGER users when a BUSINESS or BOUTIQUE customer registers
     if (customer.type === 'BUSINESS' || customer.type === 'BOUTIQUE' || customer.type === 'HOBE') {
+      const targetRoles = customer.type === 'HOBE'
+        ? ['ADMIN', 'HOBE']
+        : ['ADMIN', 'SALES'];
+
       await notify({
         createdById: req.user.id,
         title: 'New Customer Registered',
@@ -76,7 +80,7 @@ const createCustomer = async (req, res, next) => {
         type: 'CUSTOMER_CREATED',
         relatedEntityType: 'customer',
         relatedEntityId: customer.id,
-        targetRoles: ['ADMIN', 'SALES'],
+        targetRoles,
       });
     }
 

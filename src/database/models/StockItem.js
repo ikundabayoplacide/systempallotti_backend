@@ -64,10 +64,10 @@ StockItem.init(
       allowNull: false,
     },
     type: {
-      type: DataTypes.ENUM('boutique', 'hobe'),
+      type: DataTypes.ENUM('boutique', 'general', 'binding'),
       allowNull: false,
-      defaultValue: 'boutique',
-      comment: 'Indicates which department this stock item belongs to',
+      defaultValue: 'general',
+      comment: 'boutique = receptionist stock | general = hobe/general use | binding = binding dept',
     },
   },
   {

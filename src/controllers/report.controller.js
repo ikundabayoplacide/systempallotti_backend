@@ -6,7 +6,7 @@ const { getPagination } = require('../utils/helpers');
 const notify = require('../utils/notification.service');
 
 const reportIncludes = [
-  { model: User, as: 'createdBy', attributes: ['id', 'name', 'email', 'role'] },
+  { model: User, as: 'createdBy', attributes: ['id', 'name', 'email', 'role', 'phone'] },
 ];
 
 /**

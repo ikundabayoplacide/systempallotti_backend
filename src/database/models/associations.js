@@ -41,6 +41,17 @@ const LeaveRequest = require('./LeaveRequest');
 const Outstand = require('./Outstand');
 const CasualWorker = require('./CasualWorker');
 const Payroll = require('./Payroll');
+const BoutiqueStockItem = require('./BoutiqueStockItem');
+const BoutiqueStockEntry = require('./BoutiqueStockEntry');
+const BoutiqueStockSortie = require('./BoutiqueStockSortie');
+const GeneralStockItem = require('./GeneralStockItem');
+const GeneralStockEntry = require('./GeneralStockEntry');
+const GeneralStockSortie = require('./GeneralStockSortie');
+const BindingStockItem = require('./BindingStockItem');
+const BindingStockEntry = require('./BindingStockEntry');
+const BindingStockSortie = require('./BindingStockSortie');
+const Machine = require('./Machine');
+const MachineAssignment = require('./MachineAssignment');
 // ProcurementLead → User (created by)
 ProcurementLead.belongsTo(User, { foreignKey: 'createdById', as: 'createdBy' });
 User.hasMany(ProcurementLead, { foreignKey: 'createdById', as: 'procurementLeads' });
@@ -321,4 +332,88 @@ CasualWorker.hasMany(Payroll, { foreignKey: 'casualWorkerId', as: 'payrolls' });
 Payroll.belongsTo(User, { foreignKey: 'createdById', as: 'createdBy' });
 User.hasMany(Payroll, { foreignKey: 'createdById', as: 'createdPayrolls' });
 
-module.exports = { User, Customer, Job, Department, Notification, NotificationRead, Payment, BoutiqueCategory, BoutiqueProduct, BoutiqueStockMovement, StockItem, StockEntry, StockSortie, JobItem, Proforma, CustomerVisit, Permission, RolePermission, Role, Invoice, EmployeeJobAssignment, MaterialRequest, MaterialRequestItem, BoutiqueStockRequest, BoutiqueStockRequestItem, BoutiqueSale, Report, Hobe, HobeSale, JobDocument, ProcurementLead, ProcurementLeadDocument, RecoveryRecord, Outstand, CasualWorker, Payroll };
+// BoutiqueStockItem → BoutiqueStockEntry
+BoutiqueStockEntry.belongsTo(BoutiqueStockItem, { foreignKey: 'stockItemId', as: 'stockItem' });
+BoutiqueStockItem.hasMany(BoutiqueStockEntry, { foreignKey: 'stockItemId', as: 'entries' });
+
+// BoutiqueStockEntry → User (received by)
+BoutiqueStockEntry.belongsTo(User, { foreignKey: 'receivedById', as: 'receivedBy' });
+User.hasMany(BoutiqueStockEntry, { foreignKey: 'receivedById', as: 'boutiqueStockEntries' });
+
+// BoutiqueStockItem → BoutiqueStockSortie
+BoutiqueStockSortie.belongsTo(BoutiqueStockItem, { foreignKey: 'stockItemId', as: 'stockItem' });
+BoutiqueStockItem.hasMany(BoutiqueStockSortie, { foreignKey: 'stockItemId', as: 'sorties' });
+
+// BoutiqueStockSortie → User (requester)
+BoutiqueStockSortie.belongsTo(User, { foreignKey: 'requesterId', as: 'requester' });
+User.hasMany(BoutiqueStockSortie, { foreignKey: 'requesterId', as: 'boutiqueStockSortieRequests' });
+
+// BoutiqueStockSortie → User (approved by)
+BoutiqueStockSortie.belongsTo(User, { foreignKey: 'approvedById', as: 'approvedBy' });
+User.hasMany(BoutiqueStockSortie, { foreignKey: 'approvedById', as: 'approvedBoutiqueStockSorties' });
+
+// GeneralStockItem → GeneralStockEntry
+GeneralStockEntry.belongsTo(GeneralStockItem, { foreignKey: 'stockItemId', as: 'stockItem' });
+GeneralStockItem.hasMany(GeneralStockEntry, { foreignKey: 'stockItemId', as: 'entries' });
+
+// GeneralStockEntry → User (received by)
+GeneralStockEntry.belongsTo(User, { foreignKey: 'receivedById', as: 'receivedBy' });
+User.hasMany(GeneralStockEntry, { foreignKey: 'receivedById', as: 'generalStockEntries' });
+
+// GeneralStockItem → GeneralStockSortie
+GeneralStockSortie.belongsTo(GeneralStockItem, { foreignKey: 'stockItemId', as: 'stockItem' });
+GeneralStockItem.hasMany(GeneralStockSortie, { foreignKey: 'stockItemId', as: 'sorties' });
+
+// GeneralStockSortie → User (requester)
+GeneralStockSortie.belongsTo(User, { foreignKey: 'requesterId', as: 'requester' });
+User.hasMany(GeneralStockSortie, { foreignKey: 'requesterId', as: 'generalStockSortieRequests' });
+
+// GeneralStockSortie → User (approved by)
+GeneralStockSortie.belongsTo(User, { foreignKey: 'approvedById', as: 'approvedBy' });
+User.hasMany(GeneralStockSortie, { foreignKey: 'approvedById', as: 'approvedGeneralStockSorties' });
+
+// BindingStockItem → BindingStockEntry
+BindingStockEntry.belongsTo(BindingStockItem, { foreignKey: 'stockItemId', as: 'stockItem' });
+BindingStockItem.hasMany(BindingStockEntry, { foreignKey: 'stockItemId', as: 'entries' });
+
+// BindingStockEntry → User (received by)
+BindingStockEntry.belongsTo(User, { foreignKey: 'receivedById', as: 'receivedBy' });
+User.hasMany(BindingStockEntry, { foreignKey: 'receivedById', as: 'bindingStockEntries' });
+
+// BindingStockItem → BindingStockSortie
+BindingStockSortie.belongsTo(BindingStockItem, { foreignKey: 'stockItemId', as: 'stockItem' });
+BindingStockItem.hasMany(BindingStockSortie, { foreignKey: 'stockItemId', as: 'sorties' });
+
+// BindingStockSortie → User (requester)
+BindingStockSortie.belongsTo(User, { foreignKey: 'requesterId', as: 'requester' });
+User.hasMany(BindingStockSortie, { foreignKey: 'requesterId', as: 'bindingStockSortieRequests' });
+
+// BindingStockSortie → User (approved by)
+BindingStockSortie.belongsTo(User, { foreignKey: 'approvedById', as: 'approvedBy' });
+User.hasMany(BindingStockSortie, { foreignKey: 'approvedById', as: 'approvedBindingStockSorties' });
+
+// BindingStockSortie → Job
+BindingStockSortie.belongsTo(Job, { foreignKey: 'jobId', as: 'job' });
+Job.hasMany(BindingStockSortie, { foreignKey: 'jobId', as: 'bindingStockSorties' });
+
+// Machine → User (created by)
+Machine.belongsTo(User, { foreignKey: 'createdById', as: 'createdBy' });
+User.hasMany(Machine, { foreignKey: 'createdById', as: 'machines' });
+
+// MachineAssignment → Machine
+MachineAssignment.belongsTo(Machine, { foreignKey: 'machineId', as: 'machine' });
+Machine.hasMany(MachineAssignment, { foreignKey: 'machineId', as: 'assignments' });
+
+// MachineAssignment → Employee
+MachineAssignment.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
+Employee.hasMany(MachineAssignment, { foreignKey: 'employeeId', as: 'machineAssignments' });
+
+// MachineAssignment → User (assigned by)
+MachineAssignment.belongsTo(User, { foreignKey: 'assignedById', as: 'assignedBy' });
+User.hasMany(MachineAssignment, { foreignKey: 'assignedById', as: 'machineAssignments' });
+
+// Machine ↔ Employee (many-to-many via machine_assignments)
+Machine.belongsToMany(Employee, { through: MachineAssignment, foreignKey: 'machineId', otherKey: 'employeeId', as: 'workers' });
+Employee.belongsToMany(Machine, { through: MachineAssignment, foreignKey: 'employeeId', otherKey: 'machineId', as: 'machines' });
+
+module.exports = { User, Customer, Job, Department, Notification, NotificationRead, Payment, BoutiqueCategory, BoutiqueProduct, BoutiqueStockMovement, StockItem, StockEntry, StockSortie, JobItem, Proforma, CustomerVisit, Permission, RolePermission, Role, Invoice, EmployeeJobAssignment, MaterialRequest, MaterialRequestItem, BoutiqueStockRequest, BoutiqueStockRequestItem, BoutiqueSale, Report, Hobe, HobeSale, JobDocument, ProcurementLead, ProcurementLeadDocument, RecoveryRecord, Outstand, CasualWorker, Payroll, BoutiqueStockItem, BoutiqueStockEntry, BoutiqueStockSortie, GeneralStockItem, GeneralStockEntry, GeneralStockSortie, BindingStockItem, BindingStockEntry, BindingStockSortie, Machine, MachineAssignment };

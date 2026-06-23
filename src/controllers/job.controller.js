@@ -632,17 +632,15 @@ const rejectJob = async (req, res, next) => {
 
     await job.update({ status: 'rejected', rejectReason: rejectReason || null });
 
-    // If DAF is rejecting, notify the PM; otherwise notify the job creator
-    const isDaf = req.user.role === 'DAF';
     await notify({
       createdById: req.user.id,
       title: 'Job Rejected',
       message: `Job ${job.jobNumber} ("${job.title}") has been rejected by ${req.user.name || req.user.role}.${rejectReason ? ` Reason: ${rejectReason}` : ''}`,
-      type: isDaf ? 'JOB_DAF_ACTION' : 'JOB_STATUS_CHANGED',
+      type: 'JOB_DAF_ACTION',
       relatedEntityType: 'job',
       relatedEntityId: job.id,
-      targetRoles: isDaf ? ['ADMIN', 'PRODUCTION_MANAGER'] : [],
-      targetUserIds: isDaf ? [] : [job.createdById],
+      targetRoles: ['ADMIN', 'PRODUCTION_MANAGER'],
+      targetUserIds: [job.createdById],
     });
 
     return success(res, { id: job.id, jobNumber: job.jobNumber, status: 'rejected', rejectReason: job.rejectReason }, 'Job rejected successfully.');
@@ -651,31 +649,33 @@ const rejectJob = async (req, res, next) => {
   }
 };
 
+/**
+ * POST /api/jobs/:id/approve
+ * Accept a pending job (pending → confirmed). Only ADMIN or DAF.
+ * After acceptance, PM gets notified to take it from there.
+ */
 const approveJob = async (req, res, next) => {
   try {
     const job = await Job.findByPk(req.params.id, { include: jobIncludes });
     if (!job) return error(res, 'Job not found.', 404);
 
     if (job.status !== 'pending') {
-      return error(res, `Job cannot be approved. Current status is '${job.status}', expected 'pending'.`, 422);
+      return error(res, `Job cannot be accepted. Current status is '${job.status}', expected 'pending'.`, 422);
     }
 
     await job.update({ status: 'confirmed' });
 
-    // If DAF is confirming, notify the PM; otherwise notify the job creator
-    const isDaf = req.user.role === 'DAF';
     await notify({
       createdById: req.user.id,
-      title: 'Job Confirmed',
-      message: `Job ${job.jobNumber} ("${job.title}") has been confirmed by ${req.user.name || req.user.role}.`,
-      type: isDaf ? 'JOB_DAF_ACTION' : 'JOB_STATUS_CHANGED',
+      title: 'Job Accepted',
+      message: `Job ${job.jobNumber} ("${job.title}") has been accepted by ${req.user.name || req.user.role} and is ready for production.`,
+      type: 'JOB_DAF_ACTION',
       relatedEntityType: 'job',
       relatedEntityId: job.id,
-      targetRoles: isDaf ? ['ADMIN', 'PRODUCTION_MANAGER'] : [],
-      targetUserIds: isDaf ? [] : [job.createdById],
+      targetRoles: ['ADMIN', 'PRODUCTION_MANAGER'],
     });
 
-    return success(res, { id: job.id, jobNumber: job.jobNumber, status: 'confirmed' }, 'Job approved successfully.');
+    return success(res, { id: job.id, jobNumber: job.jobNumber, status: 'confirmed' }, 'Job accepted successfully.');
   } catch (err) {
     next(err);
   }

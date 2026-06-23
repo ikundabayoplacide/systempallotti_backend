@@ -32,8 +32,9 @@ const getAllItems = async (req, res, next) => {
     if (type) where.type = type;
 
     // Role-based stock type filter
-    if (req.user.role === 'HOBE') where.type = 'hobe';
     if (req.user.role === 'RECEPTIONIST') where.type = 'boutique';
+    if (req.user.role === 'HOBE') where.type = 'general';
+    if (req.user.role === 'SUPERVISOR') where.type = 'binding';
 
     if (search) {
       where[Op.or] = [
@@ -222,6 +223,16 @@ const getAllSorties = async (req, res, next) => {
   }
 };
 
+const getSortieById = async (req, res, next) => {
+  try {
+    const sortie = await StockSortie.findByPk(req.params.id, { include: sortieIncludes });
+    if (!sortie) return error(res, 'Stock sortie not found.', 404);
+    return success(res, sortie);
+  } catch (err) {
+    next(err);
+  }
+};
+
 const getMySorties = async (req, res, next) => {
   try {
     const { page, limit, skip } = getPagination(req.query);
@@ -250,10 +261,12 @@ const createSortie = async (req, res, next) => {
     if (!item) return error(res, 'Stock item not found.', 404);
 
     // Role-based stock type restriction
-    if (req.user.role === 'HOBE' && item.type !== 'hobe')
-      return error(res, 'You can only request stock items designated for hobe.', 403);
     if (req.user.role === 'RECEPTIONIST' && item.type !== 'boutique')
       return error(res, 'You can only request stock items designated for boutique.', 403);
+    if (req.user.role === 'HOBE' && item.type !== 'general')
+      return error(res, 'You can only request stock items designated for general use.', 403);
+    if (req.user.role === 'SUPERVISOR' && item.type !== 'binding')
+      return error(res, 'You can only request stock items designated for binding.', 403);
 
     const stockBefore = parseFloat(item.currentStock);
     const qty = parseFloat(quantityOut);
@@ -379,5 +392,5 @@ const rejectSortie = async (req, res, next) => {
 module.exports = {
   getAllItems, getItemById, createItem, updateItem, deleteItem,
   getAllEntries, createEntry,
-  getAllSorties, getMySorties, createSortie, approveSortie, rejectSortie,
+  getAllSorties, getSortieById, getMySorties, createSortie, approveSortie, rejectSortie,
 };

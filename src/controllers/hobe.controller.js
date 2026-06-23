@@ -3,6 +3,7 @@ const Hobe = require('../database/models/Hobe');
 const HobeSale = require('../database/models/HobeSale');
 const User = require('../database/models/User');
 const Customer = require('../database/models/Customer');
+const notify = require('../utils/notification.service');
 const { success, error, paginated } = require('../utils/apiResponse');
 const { getPagination, generateNumber } = require('../utils/helpers');
 
@@ -82,6 +83,17 @@ const createHobe = async (req, res, next) => {
     });
 
     const created = await Hobe.findByPk(hobe.id, { include: hobeIncludes });
+
+    await notify({
+      createdById: req.user.id,
+      title: 'New Hobe Received',
+      message: `A new hobe "${nameOfHobe}" (${hobeNo}) with quantity ${qty} has been recorded.`,
+      type: 'HOBE_CREATED',
+      relatedEntityType: 'hobe',
+      relatedEntityId: hobe.id,
+      targetRoles: ['ADMIN', 'HOBE'],
+    });
+
     return success(res, created, 'Hobe created successfully.', 201);
   } catch (err) {
     next(err);

@@ -46,6 +46,11 @@ const leaveRoutes = require('./src/routes/leave.routes');
 const outstandRoutes = require('./src/routes/outstand.routes');
 const casualWorkerRoutes = require('./src/routes/casualWorker.routes');
 const payrollRoutes = require('./src/routes/payroll.routes');
+const boutiqueStockRoutes = require('./src/routes/boutiqueStock.routes');
+const generalStockRoutes = require('./src/routes/generalStock.routes');
+const bindingStockRoutes = require('./src/routes/bindingStock.routes');
+const machineRoutes = require('./src/routes/machine.routes');
+const machineAssignmentRoutes = require('./src/routes/machineAssignment.routes');
 
 const app = express();
 
@@ -100,6 +105,11 @@ app.use('/api/leaves', leaveRoutes);
 app.use('/api/outstands', outstandRoutes);
 app.use('/api/casual-workers', casualWorkerRoutes);
 app.use('/api/payrolls', payrollRoutes);
+app.use('/api/boutique-stock', boutiqueStockRoutes);
+app.use('/api/general-stock', generalStockRoutes);
+app.use('/api/binding-stock', bindingStockRoutes);
+app.use('/api/machines', machineRoutes);
+app.use('/api/machine-assignments', machineAssignmentRoutes);
 
 // 404 handler
 app.use(notFound);

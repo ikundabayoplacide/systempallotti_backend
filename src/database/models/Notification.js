@@ -41,6 +41,7 @@ Notification.init(
         'PAYMENT_RECEIVED',
         'EMPLOYEE_CREATED',
         'JOB_DAF_ACTION',
+        'HOBE_CREATED',
         'GENERAL'
       ),
       defaultValue: 'GENERAL',

@@ -570,6 +570,63 @@ const options = {
             job: { $ref: '#/components/schemas/Job' },
           },
         },
+        // ── MaterialRequest ───────────────────────────────────────────────────
+        MaterialRequestItem: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            materialRequestId: { type: 'string', format: 'uuid' },
+            name: { type: 'string', example: 'A4 Paper Reams' },
+            quantity: { type: 'number', format: 'float', example: 5 },
+            unit: { type: 'string', example: 'reams' },
+          },
+        },
+        MaterialRequest: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', format: 'uuid' },
+            requestNumber: { type: 'string', example: 'MR-2026-001' },
+            jobId: { type: 'string', format: 'uuid' },
+            employeeId: { type: 'string', format: 'uuid' },
+            notes: { type: 'string', nullable: true },
+            status: { type: 'string', enum: ['pending', 'approved', 'rejected'], example: 'pending' },
+            responseNotes: { type: 'string', nullable: true },
+            respondedBy: { type: 'string', format: 'uuid', nullable: true },
+            respondedAt: { type: 'string', format: 'date-time', nullable: true },
+            items: { type: 'array', items: { $ref: '#/components/schemas/MaterialRequestItem' } },
+            job: { $ref: '#/components/schemas/Job' },
+            employee: { $ref: '#/components/schemas/User' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        CreateMaterialRequestRequest: {
+          type: 'object',
+          required: ['jobId', 'items'],
+          properties: {
+            jobId: { type: 'string', format: 'uuid', example: 'a1b2c3d4-...' },
+            notes: { type: 'string', example: 'Needed urgently for tomorrow' },
+            items: {
+              type: 'array',
+              minItems: 1,
+              items: {
+                type: 'object',
+                required: ['name', 'quantity', 'unit'],
+                properties: {
+                  name: { type: 'string', example: 'A4 Paper Reams' },
+                  quantity: { type: 'number', format: 'float', minimum: 0.01, example: 5 },
+                  unit: { type: 'string', example: 'reams' },
+                },
+              },
+            },
+          },
+        },
+        RespondMaterialRequestRequest: {
+          type: 'object',
+          properties: {
+            responseNotes: { type: 'string', example: 'Approved, will be delivered shortly' },
+          },
+        },
         // ── Boutique ─────────────────────────────────────────────────────────
         BoutiqueCategory: {
           type: 'object',
@@ -2896,6 +2953,85 @@ const options = {
           responses: {
             200: { description: 'Job removed from employee', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/SuccessResponse' }, { type: 'object', properties: { data: { $ref: '#/components/schemas/Employee' } } }] } } } },
             404: { description: 'Employee not found or job not assigned to this employee', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          },
+        },
+      },
+      // ── Material Requests ────────────────────────────────────────────────
+      '/api/material-requests/my': {
+        get: {
+          tags: ['Material Requests'],
+          summary: 'Get my material requests (WORKER, PRINTEMPLOYEE)',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { in: 'query', name: 'page', schema: { type: 'integer', default: 1 } },
+            { in: 'query', name: 'limit', schema: { type: 'integer', default: 10 } },
+            { in: 'query', name: 'status', schema: { type: 'string', enum: ['pending', 'approved', 'rejected'] } },
+          ],
+          responses: {
+            200: { description: 'List of my material requests', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/SuccessResponse' }, { type: 'object', properties: { data: { type: 'array', items: { $ref: '#/components/schemas/MaterialRequest' } } } }] } } } },
+          },
+        },
+      },
+      '/api/material-requests': {
+        get: {
+          tags: ['Material Requests'],
+          summary: 'Get all material requests (ADMIN, SUPERVISOR, STOCK_MANAGER, STOCK)',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { in: 'query', name: 'page', schema: { type: 'integer', default: 1 } },
+            { in: 'query', name: 'limit', schema: { type: 'integer', default: 10 } },
+            { in: 'query', name: 'status', schema: { type: 'string', enum: ['pending', 'approved', 'rejected'] } },
+            { in: 'query', name: 'jobId', schema: { type: 'string', format: 'uuid' } },
+          ],
+          responses: {
+            200: { description: 'List of all material requests', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/SuccessResponse' }, { type: 'object', properties: { data: { type: 'array', items: { $ref: '#/components/schemas/MaterialRequest' } } } }] } } } },
+          },
+        },
+        post: {
+          tags: ['Material Requests'],
+          summary: 'Create a material request (WORKER, PRINTEMPLOYEE)',
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/CreateMaterialRequestRequest' } } },
+          },
+          responses: {
+            201: { description: 'Material request created', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/SuccessResponse' }, { type: 'object', properties: { data: { $ref: '#/components/schemas/MaterialRequest' } } }] } } } },
+            400: { description: 'Validation error', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          },
+        },
+      },
+      '/api/material-requests/{id}/approve': {
+        patch: {
+          tags: ['Material Requests'],
+          summary: 'Approve a material request (ADMIN, SUPERVISOR, STOCK_MANAGER, STOCK)',
+          security: [{ bearerAuth: [] }],
+          parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string', format: 'uuid' } }],
+          requestBody: {
+            required: false,
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/RespondMaterialRequestRequest' } } },
+          },
+          responses: {
+            200: { description: 'Request approved', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/SuccessResponse' }, { type: 'object', properties: { data: { $ref: '#/components/schemas/MaterialRequest' } } }] } } } },
+            404: { description: 'Request not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+            409: { description: 'Already approved or rejected', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          },
+        },
+      },
+      '/api/material-requests/{id}/reject': {
+        patch: {
+          tags: ['Material Requests'],
+          summary: 'Reject a material request (ADMIN, SUPERVISOR, STOCK_MANAGER, STOCK)',
+          security: [{ bearerAuth: [] }],
+          parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string', format: 'uuid' } }],
+          requestBody: {
+            required: false,
+            content: { 'application/json': { schema: { $ref: '#/components/schemas/RespondMaterialRequestRequest' } } },
+          },
+          responses: {
+            200: { description: 'Request rejected', content: { 'application/json': { schema: { allOf: [{ $ref: '#/components/schemas/SuccessResponse' }, { type: 'object', properties: { data: { $ref: '#/components/schemas/MaterialRequest' } } }] } } } },
+            404: { description: 'Request not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+            409: { description: 'Already approved or rejected', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
           },
         },
       },
