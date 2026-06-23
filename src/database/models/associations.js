@@ -39,6 +39,8 @@ const ProcurementLeadDocument = require('./ProcurementLeadDocument');
 const RecoveryRecord = require('./RecoveryRecord');
 const LeaveRequest = require('./LeaveRequest');
 const Outstand = require('./Outstand');
+const CasualWorker = require('./CasualWorker');
+const Payroll = require('./Payroll');
 // ProcurementLead → User (created by)
 ProcurementLead.belongsTo(User, { foreignKey: 'createdById', as: 'createdBy' });
 User.hasMany(ProcurementLead, { foreignKey: 'createdById', as: 'procurementLeads' });
@@ -307,4 +309,16 @@ User.hasMany(Outstand, { foreignKey: 'recordedById', as: 'recordedOutstands' });
 Outstand.belongsTo(User, { foreignKey: 'approvedById', as: 'approvedBy' });
 User.hasMany(Outstand, { foreignKey: 'approvedById', as: 'approvedOutstands' });
 
-module.exports = { User, Customer, Job, Department, Notification, NotificationRead, Payment, BoutiqueCategory, BoutiqueProduct, BoutiqueStockMovement, StockItem, StockEntry, StockSortie, JobItem, Proforma, CustomerVisit, Permission, RolePermission, Role, Invoice, EmployeeJobAssignment, MaterialRequest, MaterialRequestItem, BoutiqueStockRequest, BoutiqueStockRequestItem, BoutiqueSale, Report, Hobe, HobeSale, JobDocument, ProcurementLead, ProcurementLeadDocument, RecoveryRecord, Outstand };
+// Payroll → Employee
+Payroll.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
+Employee.hasMany(Payroll, { foreignKey: 'employeeId', as: 'payrolls' });
+
+// Payroll → CasualWorker
+Payroll.belongsTo(CasualWorker, { foreignKey: 'casualWorkerId', as: 'casualWorker' });
+CasualWorker.hasMany(Payroll, { foreignKey: 'casualWorkerId', as: 'payrolls' });
+
+// Payroll → User (created by)
+Payroll.belongsTo(User, { foreignKey: 'createdById', as: 'createdBy' });
+User.hasMany(Payroll, { foreignKey: 'createdById', as: 'createdPayrolls' });
+
+module.exports = { User, Customer, Job, Department, Notification, NotificationRead, Payment, BoutiqueCategory, BoutiqueProduct, BoutiqueStockMovement, StockItem, StockEntry, StockSortie, JobItem, Proforma, CustomerVisit, Permission, RolePermission, Role, Invoice, EmployeeJobAssignment, MaterialRequest, MaterialRequestItem, BoutiqueStockRequest, BoutiqueStockRequestItem, BoutiqueSale, Report, Hobe, HobeSale, JobDocument, ProcurementLead, ProcurementLeadDocument, RecoveryRecord, Outstand, CasualWorker, Payroll };

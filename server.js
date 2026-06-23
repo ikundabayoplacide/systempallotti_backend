@@ -44,6 +44,8 @@ const procurementRoutes = require('./src/routes/procurement.routes');
 const recoveryRoutes = require('./src/routes/recovery.routes');
 const leaveRoutes = require('./src/routes/leave.routes');
 const outstandRoutes = require('./src/routes/outstand.routes');
+const casualWorkerRoutes = require('./src/routes/casualWorker.routes');
+const payrollRoutes = require('./src/routes/payroll.routes');
 
 const app = express();
 
@@ -96,6 +98,8 @@ app.use('/api/procurement', procurementRoutes);
 app.use('/api/recovery', recoveryRoutes);
 app.use('/api/leaves', leaveRoutes);
 app.use('/api/outstands', outstandRoutes);
+app.use('/api/casual-workers', casualWorkerRoutes);
+app.use('/api/payrolls', payrollRoutes);
 
 // 404 handler
 app.use(notFound);
