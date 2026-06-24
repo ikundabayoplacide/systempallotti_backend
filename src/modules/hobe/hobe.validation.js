@@ -34,4 +34,9 @@ const updateSaleValidation = [
   body('note').optional().trim(),
 ];
 
-module.exports = { createHobeValidation, updateHobeValidation, sellFromHobeValidation, updateSaleValidation };
+const addQtyToHobeValidation = [
+  body('qty').notEmpty().withMessage('qty is required').isInt({ min: 1 }).withMessage('qty must be a positive integer'),
+  body('note').optional().trim(),
+];
+
+module.exports = { createHobeValidation, updateHobeValidation, sellFromHobeValidation, updateSaleValidation, addQtyToHobeValidation };

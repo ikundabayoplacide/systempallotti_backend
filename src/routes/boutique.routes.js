@@ -35,7 +35,7 @@ router.delete('/products/:id', authorize('ADMIN'), deleteProduct);
 
 router.patch('/products/:id/sale-status', authorize('ADMIN', 'STOCK', 'RECEPTIONIST'), markAsSoldValidation, validate, markAsSold);
 // ── Stock Management ──────────────────────────────────────────────────────────
-router.patch('/products/:id/stock', authorize('ADMIN', 'STOCK'), updateStockValidation, validate, updateStock);
+router.patch('/products/:id/stock', authorize('ADMIN', 'STOCK', 'RECEPTIONIST'), updateStockValidation, validate, updateStock);
 router.get('/products/:id/stock-movements', getStockMovements);
 
 // ── Sales Audit ───────────────────────────────────────────────────────────────

@@ -60,7 +60,10 @@ const createStockController = (Item, Entry, Sortie, User, managerRoles) => {
   const createItem = async (req, res, next) => {
     try {
       const { itemName, category, unit, description, supplier, unitCost, currentStock, alarmStock } = req.body;
-      const item = await Item.create({ itemName, category, unit, description, supplier, unitCost, currentStock: currentStock || 0, alarmStock: alarmStock || 5 });
+      if (currentStock === undefined || currentStock === null || currentStock === '') return error(res, 'Initial stock is required.', 400);
+      const parsedStock = parseFloat(currentStock);
+      if (isNaN(parsedStock)) return error(res, 'Initial stock must be a valid number.', 400);
+      const item = await Item.create({ itemName, category, unit: unit || null, description, supplier, unitCost, currentStock: parsedStock, alarmStock: alarmStock || 5 });
       return success(res, { ...item.toJSON(), stockStatus: item.stockStatus }, 'Stock item created successfully.', 201);
     } catch (err) { next(err); }
   };

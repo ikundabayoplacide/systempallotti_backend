@@ -139,6 +139,35 @@ const deleteHobe = async (req, res, next) => {
   }
 };
 
+const addQtyToHobe = async (req, res, next) => {
+  try {
+    const hobe = await Hobe.findByPk(req.params.id);
+    if (!hobe) return error(res, 'Hobe not found.', 404);
+
+    const { qty, note } = req.body;
+    if (!Number.isInteger(qty) || qty < 1)
+      return error(res, 'qty must be a positive integer.', 422);
+
+    const newQty = hobe.qty + qty;
+    const newQtyRemains = hobe.qtyRemains + qty;
+    const newTotalPrice = newQty * parseFloat(hobe.pricePerItem);
+    const newStatus = newQtyRemains > 0 && hobe.status === 'closed' ? 'active' : hobe.status;
+
+    await hobe.update({
+      qty: newQty,
+      qtyRemains: newQtyRemains,
+      totalPrice: newTotalPrice,
+      status: newStatus,
+      ...(note !== undefined && { note }),
+    });
+
+    const updated = await Hobe.findByPk(hobe.id, { include: hobeIncludes });
+    return success(res, updated, `${qty} units added to hobe successfully.`);
+  } catch (err) {
+    next(err);
+  }
+};
+
 // ── Hobe Trade (sell) ─────────────────────────────────────────────────────────
 
 const sellFromHobe = async (req, res, next) => {
@@ -298,6 +327,7 @@ const deleteHobeSale = async (req, res, next) => {
 
 module.exports = {
   getAllHobes, getHobeById, createHobe, updateHobe, deleteHobe,
+  addQtyToHobe,
   sellFromHobe,
   getHobeSales, getHobeSalesSummary, updateHobeSale, deleteHobeSale,
 };

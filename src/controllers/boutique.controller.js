@@ -1,4 +1,7 @@
 const { Op, fn, col, literal } = require('sequelize');
+const BoutiqueStockItem = require('../database/models/BoutiqueStockItem');
+const BoutiqueStockSortie = require('../database/models/BoutiqueStockSortie');
+
 const BoutiqueProduct = require('../database/models/BoutiqueProduct');
 const BoutiqueCategory = require('../database/models/BoutiqueCategory');
 const BoutiqueStockMovement = require('../database/models/BoutiqueStockMovement');
@@ -410,12 +413,32 @@ const updateStock = async (req, res, next) => {
     const product = await BoutiqueProduct.findByPk(req.params.id);
     if (!product) return error(res, 'Product not found.', 404);
 
-    const { change, reason } = req.body;
+    const { change, reason, boutiqueStockItemId } = req.body;
+
     const stockBefore = product.stock;
     const stockAfter = stockBefore + change;
 
-    if (stockAfter < 0) {
-      return error(res, `Insufficient stock. Current stock: ${stockBefore}, requested change: ${change}.`, 422);
+    if (boutiqueStockItemId) {
+      const stockItem = await BoutiqueStockItem.findByPk(boutiqueStockItemId);
+      if (!stockItem) return error(res, 'Boutique stock item not found.', 404);
+
+      const rawStock = parseFloat(stockItem.currentStock);
+      if (change > rawStock) return error(res, `Insufficient stock item quantity. Available: ${rawStock}, requested: ${change}.`, 422);
+
+      const rawStockAfter = rawStock - change;
+      await stockItem.update({ currentStock: rawStockAfter });
+
+      await BoutiqueStockSortie.create({
+        stockItemId: boutiqueStockItemId,
+        requesterId: req.user.id,
+        approvedById: req.user.id,
+        quantityOut: change,
+        reason: reason || `Transferred to product: ${product.name}`,
+        status: 'approved',
+        sortieDate: new Date(),
+        stockBefore: rawStock,
+        stockAfter: rawStockAfter,
+      });
     }
 
     await product.update({ stock: stockAfter });
@@ -424,16 +447,14 @@ const updateStock = async (req, res, next) => {
       productId: product.id,
       changedById: req.user.id,
       change,
-      reason,
+      reason: reason || 'restock',
       stockBefore,
       stockAfter,
     });
 
     const updated = await BoutiqueProduct.findByPk(product.id, { include: productIncludes });
     return success(res, { ...updated.toJSON(), status: updated.status }, 'Stock updated successfully.');
-  } catch (err) {
-    next(err);
-  }
+  } catch (err) { next(err); }
 };
 
 const getStockMovements = async (req, res, next) => {

@@ -11,11 +11,11 @@ router.get('/items', authorize('ADMIN', 'STOCK', 'RECEPTIONIST'), ctrl.getAllIte
 router.get('/items/:id', authorize('ADMIN', 'STOCK', 'RECEPTIONIST'), ctrl.getItemById);
 router.post('/items', authorize('ADMIN', 'STOCK'), ctrl.createItem);
 router.put('/items/:id', authorize('ADMIN', 'STOCK'), ctrl.updateItem);
-router.delete('/items/:id', authorize('ADMIN'), ctrl.deleteItem);
+router.delete('/items/:id', authorize('ADMIN', 'STOCK'), ctrl.deleteItem);
 
 // Entries (IN)
-router.get('/entries', authorize('ADMIN', 'STOCK'), ctrl.getAllEntries);
-router.post('/entries', authorize('ADMIN', 'STOCK'), ctrl.createEntry);
+router.get('/entries', authorize('ADMIN', 'STOCK', 'RECEPTIONIST'), ctrl.getAllEntries);
+router.post('/entries', authorize('ADMIN', 'STOCK', 'RECEPTIONIST'), ctrl.createEntry);
 
 // Sorties (OUT)
 router.get('/sorties/my', authorize('RECEPTIONIST'), ctrl.getMySorties);

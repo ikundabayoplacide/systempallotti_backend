@@ -35,8 +35,9 @@ const updateProductValidation = [
 
 const updateStockValidation = [
   body('change').notEmpty().withMessage('change is required')
-    .isInt().withMessage('change must be an integer (positive for restock, negative for sale/use)'),
-  body('reason').trim().notEmpty().withMessage('reason is required'),
+    .isInt({ min: 1 }).withMessage('change must be a positive integer'),
+  body('boutiqueStockItemId').optional().isUUID().withMessage('boutiqueStockItemId must be a valid UUID'),
+  body('reason').optional().trim(),
 ];
 
 const markAsSoldValidation = [
