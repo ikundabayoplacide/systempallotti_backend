@@ -22,8 +22,8 @@ router.use(authenticate);
 
 // ── Categories ────────────────────────────────────────────────────────────────
 router.get('/categories', getAllCategories);
-router.post('/categories', authorize('ADMIN'), createCategoryValidation, validate, createCategory);
-router.put('/categories/:id', authorize('ADMIN'), updateCategoryValidation, validate, updateCategory);
+router.post('/categories', authorize('ADMIN', 'RECEPTIONIST'), createCategoryValidation, validate, createCategory);
+router.put('/categories/:id', authorize('ADMIN', 'RECEPTIONIST'), updateCategoryValidation, validate, updateCategory);
 router.delete('/categories/:id', authorize('ADMIN'), deleteCategory);
 
 // ── Products ──────────────────────────────────────────────────────────────────
