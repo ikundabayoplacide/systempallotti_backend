@@ -3,6 +3,7 @@ const Outstand = require('../database/models/Outstand');
 const User = require('../database/models/User');
 const { success, error, paginated } = require('../utils/apiResponse');
 const { getPagination } = require('../utils/helpers');
+const notify = require('../utils/notification.service');
 
 const userAttrs = ['id', 'name', 'email', 'role'];
 
@@ -36,8 +37,8 @@ const getAllOutstands = async (req, res, next) => {
       if (to) where.createdAt[Op.lte] = new Date(to);
     }
 
-    // Receptionist sees only their own records
-    if (req.user.role === 'RECEPTIONIST') {
+    // Receptionist/Cashier sees only their own records
+    if (['RECEPTIONIST', 'CASHIER'].includes(req.user.role)) {
       where.recordedById = req.user.id;
     }
 
@@ -63,8 +64,8 @@ const getOutstandById = async (req, res, next) => {
     const outstand = await Outstand.findByPk(req.params.id, { include: outstandIncludes });
     if (!outstand) return error(res, 'Outstand not found.', 404);
 
-    // Receptionist can only see their own
-    if (req.user.role === 'RECEPTIONIST' && outstand.recordedById !== req.user.id) {
+    // Receptionist/Cashier can only see their own
+    if (['RECEPTIONIST', 'CASHIER'].includes(req.user.role) && outstand.recordedById !== req.user.id) {
       return error(res, 'Forbidden.', 403);
     }
 
@@ -101,6 +102,17 @@ const createOutstand = async (req, res, next) => {
     });
 
     const created = await Outstand.findByPk(outstand.id, { include: outstandIncludes });
+
+    await notify({
+      createdById: req.user.id,
+      title: 'New Expense Recorded',
+      message: `Expense "${description}" (${ref}) of ${parseFloat((parseFloat(quantity || 1) * parseFloat(unitCost)).toFixed(2))} recorded by ${req.user.name || req.user.email}.`,
+      type: 'OUTSTAND_CREATED',
+      relatedEntityType: 'outstand',
+      relatedEntityId: outstand.id,
+      targetRoles: ['ADMIN', 'DAF', 'ACCOUNTANT', 'CASHIER'],
+    });
+
     return success(res, created, 'Outstand recorded successfully.', 201);
   } catch (err) {
     next(err);
@@ -116,8 +128,8 @@ const updateOutstand = async (req, res, next) => {
     const outstand = await Outstand.findByPk(req.params.id);
     if (!outstand) return error(res, 'Outstand not found.', 404);
 
-    // Receptionist can only edit their own
-    if (req.user.role === 'RECEPTIONIST' && outstand.recordedById !== req.user.id) {
+    // Receptionist/Cashier can only edit their own
+    if (['RECEPTIONIST', 'CASHIER'].includes(req.user.role) && outstand.recordedById !== req.user.id) {
       return error(res, 'Forbidden.', 403);
     }
 

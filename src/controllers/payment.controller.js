@@ -94,7 +94,7 @@ const createPayment = async (req, res, next) => {
       type: 'PAYMENT_COLLECTED',
       relatedEntityType: 'payment',
       relatedEntityId: payment.id,
-      targetRoles: ['ADMIN', 'DAF', 'ACCOUNTANT'],
+      targetRoles: ['ADMIN', 'DAF', 'ACCOUNTANT', 'CASHIER'],
     });
 
     const created = await Payment.findByPk(payment.id, { include: paymentIncludes });
