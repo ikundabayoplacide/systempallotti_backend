@@ -81,7 +81,7 @@ const getAllInvoices = async (req, res, next) => {
 
     if (search) {
       where[Op.or] = [
-        { invoiceNo: { [Op.iLike]: `%${search}%` } },
+        { invoiceNo: { [Op.like]: `%${search}%` } },
       ];
     }
 

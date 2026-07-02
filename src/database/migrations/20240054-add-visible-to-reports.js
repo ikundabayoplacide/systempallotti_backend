@@ -3,7 +3,7 @@
 module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.addColumn('reports', 'visible_to', {
-      type: Sequelize.JSONB,
+      type: Sequelize.JSON,
       allowNull: true,
       defaultValue: null,
     });

@@ -73,6 +73,5 @@ module.exports = {
 
   async down(queryInterface) {
     await queryInterface.dropTable('notifications');
-    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_notifications_type";');
   },
 };

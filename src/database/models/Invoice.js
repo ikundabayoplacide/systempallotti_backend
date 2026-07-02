@@ -51,7 +51,7 @@ Invoice.init(
     // --- Line items snapshot (JSON array) ---
     // Each element: { name, description, quantity, unitPrice, totalPrice }
     lineItems: {
-      type: DataTypes.JSONB,
+      type: DataTypes.JSON,
       allowNull: false,
       defaultValue: [],
       comment: 'Snapshot of items/services billed on this invoice',

@@ -57,8 +57,5 @@ module.exports = {
     await queryInterface.removeColumn('jobs', 'paymentMethod');
     await queryInterface.removeColumn('jobs', 'paymentNote');
     await queryInterface.removeColumn('jobs', 'paidAt');
-
-    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_jobs_paymentStatus";');
-    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_jobs_paymentMethod";');
   },
 };

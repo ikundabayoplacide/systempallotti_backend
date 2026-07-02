@@ -51,10 +51,10 @@ const getDebtList = async (req, res, next) => {
     if (search) {
       where[Op.and] = [{
         [Op.or]: [
-          { jobNumber: { [Op.iLike]: `%${search}%` } },
-          { title: { [Op.iLike]: `%${search}%` } },
-          { '$customer.name$': { [Op.iLike]: `%${search}%` } },
-          { '$customer.phone$': { [Op.iLike]: `%${search}%` } },
+          { jobNumber: { [Op.like]: `%${search}%` } },
+          { title: { [Op.like]: `%${search}%` } },
+          { '$customer.name$': { [Op.like]: `%${search}%` } },
+          { '$customer.phone$': { [Op.like]: `%${search}%` } },
         ],
       }];
     }

@@ -1,6 +1,5 @@
 'use strict';
 
-/** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.changeColumn('payments', 'receivedById', {
@@ -11,7 +10,6 @@ module.exports = {
     await queryInterface.changeColumn('payments', 'receiptNo', {
       type: Sequelize.STRING,
       allowNull: true,
-      unique: true,
     });
 
     await queryInterface.changeColumn('payments', 'amountPaid', {
@@ -26,14 +24,15 @@ module.exports = {
       defaultValue: 0,
     });
 
-    // For ENUM columns, we need to use raw SQL to allow null
-    await queryInterface.sequelize.query(`
-      ALTER TABLE payments ALTER COLUMN "paymentMethod" DROP NOT NULL;
-    `);
+    await queryInterface.changeColumn('payments', 'paymentMethod', {
+      type: Sequelize.ENUM('CASH', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CARD'),
+      allowNull: true,
+    });
 
-    await queryInterface.sequelize.query(`
-      ALTER TABLE payments ALTER COLUMN "paymentState" DROP NOT NULL;
-    `);
+    await queryInterface.changeColumn('payments', 'paymentState', {
+      type: Sequelize.ENUM('FULL', 'PARTIAL'),
+      allowNull: true,
+    });
   },
 
   async down(queryInterface, Sequelize) {
@@ -45,15 +44,16 @@ module.exports = {
     await queryInterface.changeColumn('payments', 'receiptNo', {
       type: Sequelize.STRING,
       allowNull: false,
-      unique: true,
     });
 
-    await queryInterface.sequelize.query(`
-      ALTER TABLE payments ALTER COLUMN "paymentMethod" SET NOT NULL;
-    `);
+    await queryInterface.changeColumn('payments', 'paymentMethod', {
+      type: Sequelize.ENUM('CASH', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CARD'),
+      allowNull: false,
+    });
 
-    await queryInterface.sequelize.query(`
-      ALTER TABLE payments ALTER COLUMN "paymentState" SET NOT NULL;
-    `);
+    await queryInterface.changeColumn('payments', 'paymentState', {
+      type: Sequelize.ENUM('FULL', 'PARTIAL'),
+      allowNull: false,
+    });
   },
 };

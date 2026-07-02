@@ -17,7 +17,7 @@ const getAllCustomers = async (req, res, next) => {
 
     if (search) {
       where[Op.or] = ['name', 'email', 'company', 'phone'].map((field) => ({
-        [field]: { [Op.iLike]: `%${search}%` },
+        [field]: { [Op.like]: `%${search}%` },
       }));
     }
 

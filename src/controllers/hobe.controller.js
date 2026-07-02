@@ -31,8 +31,8 @@ const getAllHobes = async (req, res, next) => {
     if (status) where.status = status;
     if (search) {
       where[Op.or] = [
-        { hobeNo: { [Op.iLike]: `%${search}%` } },
-        { nameOfHobe: { [Op.iLike]: `%${search}%` } },
+        { hobeNo: { [Op.like]: `%${search}%` } },
+        { nameOfHobe: { [Op.like]: `%${search}%` } },
       ];
     }
 

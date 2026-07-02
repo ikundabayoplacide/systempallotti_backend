@@ -97,7 +97,5 @@ module.exports = {
 
   async down(queryInterface) {
     await queryInterface.dropTable('outstands');
-    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_outstands_category";');
-    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_outstands_status";');
   },
 };

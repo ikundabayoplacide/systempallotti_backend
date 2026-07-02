@@ -32,6 +32,5 @@ module.exports = {
     await queryInterface.removeColumn('boutique_sales', 'balanceDue');
     await queryInterface.removeColumn('boutique_sales', 'changeGiven');
     await queryInterface.removeColumn('boutique_sales', 'paymentStatus');
-    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_boutique_sales_paymentStatus";');
   },
 };

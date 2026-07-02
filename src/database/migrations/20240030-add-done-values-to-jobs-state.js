@@ -1,26 +1,24 @@
 'use strict';
 
 module.exports = {
-  async up(queryInterface) {
-    // PostgreSQL requires each ADD VALUE in a separate statement
-    const doneValues = [
-      'composition-done',
-      'montage-done',
-      'printing-done',
-      'binding-done',
-      'packaging-done',
-      'qualitycheck-done',
-    ];
-
-    for (const value of doneValues) {
-      await queryInterface.sequelize.query(
-        `ALTER TYPE "enum_jobs_state" ADD VALUE IF NOT EXISTS '${value}';`
-      );
-    }
+  async up(queryInterface, Sequelize) {
+    await queryInterface.changeColumn('jobs', 'state', {
+      type: Sequelize.ENUM(
+        'in-composition', 'in-montage', 'in-printing', 'in-binding', 'in-packaging', 'quality-check',
+        'composition-done', 'montage-done', 'printing-done', 'binding-done', 'packaging-done', 'qualitycheck-done'
+      ),
+      allowNull: true,
+      defaultValue: null,
+    });
   },
 
-  async down(_queryInterface) {
-    // To roll back you would need to recreate the type — skip for safety.
-    console.warn('Down migration: removing enum values from enum_jobs_state is not supported by PostgreSQL. Skipping.');
+  async down(queryInterface, Sequelize) {
+    await queryInterface.changeColumn('jobs', 'state', {
+      type: Sequelize.ENUM(
+        'in-composition', 'in-montage', 'in-printing', 'in-binding', 'in-packaging', 'quality-check'
+      ),
+      allowNull: true,
+      defaultValue: null,
+    });
   },
 };

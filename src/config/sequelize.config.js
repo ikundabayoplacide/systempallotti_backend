@@ -1,28 +1,14 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
+
+const config = {
+  url: process.env.DATABASE_URL,
+  dialect: 'mysql',
+  seederStorage: 'sequelize',
+  migrationStorage: 'sequelize',
+};
 
 module.exports = {
-  development: {
-    url: process.env.DATABASE_URL,
-    dialect: 'postgres',
-    dialectOptions: {
-      ssl: {
-        require: true,
-        rejectUnauthorized: false,
-      },
-    },
-    seederStorage: 'sequelize',
-    migrationStorage: 'sequelize',
-  },
-  production: {
-    url: process.env.DATABASE_URL,
-    dialect: 'postgres',
-    dialectOptions: {
-      ssl: {
-        require: true,
-        rejectUnauthorized: false,
-      },
-    },
-    seederStorage: 'sequelize',
-    migrationStorage: 'sequelize',
-  },
+  development: config,
+  production: config,
 };

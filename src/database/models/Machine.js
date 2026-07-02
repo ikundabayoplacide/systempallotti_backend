@@ -33,6 +33,10 @@ Machine.init(
       type: DataTypes.UUID,
       allowNull: true,
     },
+    departmentId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+    },
   },
   {
     sequelize,

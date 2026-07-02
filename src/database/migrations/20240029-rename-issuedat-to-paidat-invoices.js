@@ -1,13 +1,21 @@
 'use strict';
 
 module.exports = {
-  async up(queryInterface) {
+  async up(queryInterface, Sequelize) {
     await queryInterface.renameColumn('invoices', 'issuedAt', 'paidAt');
-    await queryInterface.sequelize.query(`ALTER TABLE invoices ALTER COLUMN status SET DEFAULT 'paid';`);
+    await queryInterface.changeColumn('invoices', 'status', {
+      type: Sequelize.ENUM('draft', 'issued', 'paid', 'cancelled'),
+      allowNull: false,
+      defaultValue: 'paid',
+    });
   },
 
-  async down(queryInterface) {
+  async down(queryInterface, Sequelize) {
     await queryInterface.renameColumn('invoices', 'paidAt', 'issuedAt');
-    await queryInterface.sequelize.query(`ALTER TABLE invoices ALTER COLUMN status SET DEFAULT 'draft';`);
+    await queryInterface.changeColumn('invoices', 'status', {
+      type: Sequelize.ENUM('draft', 'issued', 'paid', 'cancelled'),
+      allowNull: false,
+      defaultValue: 'draft',
+    });
   },
 };

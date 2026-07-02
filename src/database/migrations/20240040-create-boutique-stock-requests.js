@@ -68,6 +68,5 @@ module.exports = {
   async down(queryInterface) {
     await queryInterface.dropTable('boutique_stock_request_items');
     await queryInterface.dropTable('boutique_stock_requests');
-    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_boutique_stock_requests_status";');
   },
 };

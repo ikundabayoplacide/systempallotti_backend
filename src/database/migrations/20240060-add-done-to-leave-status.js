@@ -1,12 +1,19 @@
 'use strict';
 
 module.exports = {
-  async up(queryInterface) {
-    await queryInterface.sequelize.query(
-      `ALTER TYPE "enum_leave_requests_status" ADD VALUE IF NOT EXISTS 'DONE';`
-    );
+  async up(queryInterface, Sequelize) {
+    await queryInterface.changeColumn('leave_requests', 'status', {
+      type: Sequelize.ENUM('PENDING', 'APPROVED', 'REJECTED', 'DONE'),
+      defaultValue: 'PENDING',
+      allowNull: false,
+    });
   },
-  async down() {
-    // Postgres does not support removing ENUM values
+
+  async down(queryInterface, Sequelize) {
+    await queryInterface.changeColumn('leave_requests', 'status', {
+      type: Sequelize.ENUM('PENDING', 'APPROVED', 'REJECTED'),
+      defaultValue: 'PENDING',
+      allowNull: false,
+    });
   },
 };

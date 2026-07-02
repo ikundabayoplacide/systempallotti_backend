@@ -8,15 +8,27 @@ module.exports = {
       after: 'notes',
     });
 
-    // Add 'rejected' to the status ENUM
-    await queryInterface.sequelize.query(`
-      ALTER TYPE "enum_jobs_status" ADD VALUE IF NOT EXISTS 'rejected';
-    `);
+    await queryInterface.changeColumn('jobs', 'status', {
+      type: Sequelize.ENUM(
+        'pending', 'confirmed', 'rejected',
+        'in-composition', 'in-montage', 'in-printing', 'in-binding', 'in-packaging',
+        'quality-check', 'ready-for-delivery', 'delivered', 'completed'
+      ),
+      defaultValue: 'pending',
+      allowNull: false,
+    });
   },
 
-  async down(queryInterface) {
+  async down(queryInterface, Sequelize) {
     await queryInterface.removeColumn('jobs', 'rejectReason');
-    // Note: PostgreSQL does not support removing ENUM values natively.
-    // To fully revert, recreate the ENUM without 'rejected'.
+    await queryInterface.changeColumn('jobs', 'status', {
+      type: Sequelize.ENUM(
+        'pending', 'confirmed',
+        'in-composition', 'in-montage', 'in-printing', 'in-binding', 'in-packaging',
+        'quality-check', 'ready-for-delivery', 'delivered', 'completed'
+      ),
+      defaultValue: 'pending',
+      allowNull: false,
+    });
   },
 };

@@ -45,9 +45,9 @@ const getAllEmployees = async (req, res, next) => {
     if (isActive !== undefined) where.isActive = isActive === 'true';
     if (search) {
       where[Op.or] = [
-        { fullName: { [Op.iLike]: `%${search}%` } },
-        { phoneNumber: { [Op.iLike]: `%${search}%` } },
-        { email: { [Op.iLike]: `%${search}%` } },
+        { fullName: { [Op.like]: `%${search}%` } },
+        { phoneNumber: { [Op.like]: `%${search}%` } },
+        { email: { [Op.like]: `%${search}%` } },
       ];
     }
 

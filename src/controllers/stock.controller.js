@@ -38,9 +38,9 @@ const getAllItems = async (req, res, next) => {
 
     if (search) {
       where[Op.or] = [
-        { itemName: { [Op.iLike]: `%${search}%` } },
-        { category: { [Op.iLike]: `%${search}%` } },
-        { supplier: { [Op.iLike]: `%${search}%` } },
+        { itemName: { [Op.like]: `%${search}%` } },
+        { category: { [Op.like]: `%${search}%` } },
+        { supplier: { [Op.like]: `%${search}%` } },
       ];
     }
 

@@ -31,7 +31,7 @@ const getAllProformas = async (req, res, next) => {
     if (customerId) where.customerId = customerId;
     if (search) {
       where[Op.or] = [
-        { proformaNo: { [Op.iLike]: `%${search}%` } },
+        { proformaNo: { [Op.like]: `%${search}%` } },
       ];
     }
 

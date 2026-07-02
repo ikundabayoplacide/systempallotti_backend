@@ -11,6 +11,5 @@ module.exports = {
 
   async down(queryInterface) {
     await queryInterface.removeColumn('jobs', 'jobFor');
-    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_jobs_jobFor";');
   },
 };

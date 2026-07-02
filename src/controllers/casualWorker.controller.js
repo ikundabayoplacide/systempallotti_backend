@@ -24,9 +24,9 @@ const getAllCasualWorkers = async (req, res, next) => {
     const where = {};
     if (search) {
       where[Op.or] = [
-        { fullName: { [Op.iLike]: `%${search}%` } },
-        { jobDone: { [Op.iLike]: `%${search}%` } },
-        { phoneNumber: { [Op.iLike]: `%${search}%` } },
+        { fullName: { [Op.like]: `%${search}%` } },
+        { jobDone: { [Op.like]: `%${search}%` } },
+        { phoneNumber: { [Op.like]: `%${search}%` } },
       ];
     }
 

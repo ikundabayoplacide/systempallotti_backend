@@ -94,9 +94,9 @@ const getAllProducts = async (req, res, next) => {
 
     if (search) {
       where[Op.or] = [
-        { name: { [Op.iLike]: `%${search}%` } },
-        { sku: { [Op.iLike]: `%${search}%` } },
-        { description: { [Op.iLike]: `%${search}%` } },
+        { name: { [Op.like]: `%${search}%` } },
+        { sku: { [Op.like]: `%${search}%` } },
+        { description: { [Op.like]: `%${search}%` } },
       ];
     }
 
@@ -318,7 +318,7 @@ const getSalesSummary = async (req, res, next) => {
         [fn('COUNT', col('id')), 'totalTransactions'],
         [fn('SUM', col('quantity')), 'totalQuantitySold'],
         [fn('SUM', col('amountPaid')), 'totalAmountPaid'],
-        [fn('SUM', literal('quantity * "unitPrice"')), 'totalExpectedRevenue'],
+        [fn('SUM', literal('quantity * `unitPrice`')), 'totalExpectedRevenue'],
       ],
       raw: true,
     });
@@ -329,7 +329,7 @@ const getSalesSummary = async (req, res, next) => {
         'productId',
         [fn('SUM', col('quantity')), 'totalQuantity'],
         [fn('SUM', col('amountPaid')), 'totalAmountPaid'],
-        [fn('SUM', literal('quantity * "unitPrice"')), 'totalExpectedRevenue'],
+        [fn('SUM', literal('quantity * `unitPrice`')), 'totalExpectedRevenue'],
         [fn('COUNT', col('BoutiqueSale.id')), 'transactions'],
       ],
       include: [{ model: BoutiqueProduct, as: 'product', attributes: ['sku', 'name', 'unit'] }],

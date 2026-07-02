@@ -57,7 +57,7 @@ Notification.init(
     },
     // Roles this notification was broadcast to (informational)
     targetRoles: {
-      type: DataTypes.ARRAY(DataTypes.STRING),
+      type: DataTypes.TEXT,
       allowNull: true,
       defaultValue: [],
     },

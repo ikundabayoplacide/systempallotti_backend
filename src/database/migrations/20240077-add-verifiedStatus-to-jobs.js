@@ -26,6 +26,5 @@ module.exports = {
     await queryInterface.removeColumn('jobs', 'verifiedById');
     await queryInterface.removeColumn('jobs', 'verifiedAt');
     await queryInterface.removeColumn('jobs', 'verificationNote');
-    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_jobs_verifiedStatus";');
   },
 };

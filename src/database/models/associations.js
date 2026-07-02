@@ -52,6 +52,10 @@ const BindingStockEntry = require('./BindingStockEntry');
 const BindingStockSortie = require('./BindingStockSortie');
 const Machine = require('./Machine');
 const MachineAssignment = require('./MachineAssignment');
+const JobSpec = require('./JobSpec');
+const JobSpecDocument = require('./JobSpecDocument');
+const DepartmentSample = require('./DepartmentSample');
+const DepartmentSampleDocument = require('./DepartmentSampleDocument');
 // ProcurementLead → User (created by)
 ProcurementLead.belongsTo(User, { foreignKey: 'createdById', as: 'createdBy' });
 User.hasMany(ProcurementLead, { foreignKey: 'createdById', as: 'procurementLeads' });
@@ -400,6 +404,10 @@ Job.hasMany(BindingStockSortie, { foreignKey: 'jobId', as: 'bindingStockSorties'
 Machine.belongsTo(User, { foreignKey: 'createdById', as: 'createdBy' });
 User.hasMany(Machine, { foreignKey: 'createdById', as: 'machines' });
 
+// Machine -> Department
+Machine.belongsTo(Department, { foreignKey: 'departmentId', as: 'department' });
+Department.hasMany(Machine, { foreignKey: 'departmentId', as: 'machines' });
+
 // MachineAssignment → Machine
 MachineAssignment.belongsTo(Machine, { foreignKey: 'machineId', as: 'machine' });
 Machine.hasMany(MachineAssignment, { foreignKey: 'machineId', as: 'assignments' });
@@ -416,4 +424,39 @@ User.hasMany(MachineAssignment, { foreignKey: 'assignedById', as: 'machineAssign
 Machine.belongsToMany(Employee, { through: MachineAssignment, foreignKey: 'machineId', otherKey: 'employeeId', as: 'workers' });
 Employee.belongsToMany(Machine, { through: MachineAssignment, foreignKey: 'employeeId', otherKey: 'machineId', as: 'machines' });
 
-module.exports = { User, Customer, Job, Department, Notification, NotificationRead, Payment, BoutiqueCategory, BoutiqueProduct, BoutiqueStockMovement, StockItem, StockEntry, StockSortie, JobItem, Proforma, CustomerVisit, Permission, RolePermission, Role, Invoice, EmployeeJobAssignment, MaterialRequest, MaterialRequestItem, BoutiqueStockRequest, BoutiqueStockRequestItem, BoutiqueSale, Report, Hobe, HobeSale, JobDocument, ProcurementLead, ProcurementLeadDocument, RecoveryRecord, Outstand, CasualWorker, Payroll, BoutiqueStockItem, BoutiqueStockEntry, BoutiqueStockSortie, GeneralStockItem, GeneralStockEntry, GeneralStockSortie, BindingStockItem, BindingStockEntry, BindingStockSortie, Machine, MachineAssignment };
+// JobSpec -> Job
+JobSpec.belongsTo(Job, { foreignKey: 'jobId', as: 'job' });
+Job.hasMany(JobSpec, { foreignKey: 'jobId', as: 'specs' });
+
+// JobSpec -> User (added by)
+JobSpec.belongsTo(User, { foreignKey: 'addedById', as: 'addedBy' });
+User.hasMany(JobSpec, { foreignKey: 'addedById', as: 'jobSpecs' });
+
+// JobSpecDocument -> JobSpec
+JobSpecDocument.belongsTo(JobSpec, { foreignKey: 'jobSpecId', as: 'spec' });
+JobSpec.hasMany(JobSpecDocument, { foreignKey: 'jobSpecId', as: 'documents' });
+
+// JobSpecDocument -> User (uploaded by)
+JobSpecDocument.belongsTo(User, { foreignKey: 'uploadedById', as: 'uploadedBy' });
+User.hasMany(JobSpecDocument, { foreignKey: 'uploadedById', as: 'jobSpecDocuments' });
+// DepartmentSample -> Department
+DepartmentSample.belongsTo(Department, { foreignKey: 'departmentId', as: 'department' });
+Department.hasMany(DepartmentSample, { foreignKey: 'departmentId', as: 'samples' });
+
+// DepartmentSample -> User (createdBy)
+DepartmentSample.belongsTo(User, { foreignKey: 'createdById', as: 'createdBy' });
+User.hasMany(DepartmentSample, { foreignKey: 'createdById', as: 'departmentSamples' });
+
+// DepartmentSample -> User (reviewedBy)
+DepartmentSample.belongsTo(User, { foreignKey: 'reviewedById', as: 'reviewedBy' });
+User.hasMany(DepartmentSample, { foreignKey: 'reviewedById', as: 'reviewedSamples' });
+
+// DepartmentSampleDocument -> DepartmentSample
+DepartmentSampleDocument.belongsTo(DepartmentSample, { foreignKey: 'sampleId', as: 'sample' });
+DepartmentSample.hasMany(DepartmentSampleDocument, { foreignKey: 'sampleId', as: 'documents' });
+
+// DepartmentSampleDocument -> User (uploadedBy)
+DepartmentSampleDocument.belongsTo(User, { foreignKey: 'uploadedById', as: 'uploadedBy' });
+User.hasMany(DepartmentSampleDocument, { foreignKey: 'uploadedById', as: 'sampleDocuments' });
+
+module.exports = { User, Customer, Job, Department, Notification, NotificationRead, Payment, BoutiqueCategory, BoutiqueProduct, BoutiqueStockMovement, StockItem, StockEntry, StockSortie, JobItem, Proforma, CustomerVisit, Permission, RolePermission, Role, Invoice, EmployeeJobAssignment, MaterialRequest, MaterialRequestItem, BoutiqueStockRequest, BoutiqueStockRequestItem, BoutiqueSale, Report, Hobe, HobeSale, JobDocument, ProcurementLead, ProcurementLeadDocument, RecoveryRecord, Outstand, CasualWorker, Payroll, BoutiqueStockItem, BoutiqueStockEntry, BoutiqueStockSortie, GeneralStockItem, GeneralStockEntry, GeneralStockSortie, BindingStockItem, BindingStockEntry, BindingStockSortie, Machine, MachineAssignment, JobSpec, JobSpecDocument, DepartmentSample, DepartmentSampleDocument };

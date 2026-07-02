@@ -1,11 +1,13 @@
 const { Op } = require('sequelize');
 const Machine = require('../database/models/Machine');
 const User = require('../database/models/User');
+const Department = require('../database/models/Department');
 const { success, error, paginated } = require('../utils/apiResponse');
 const { getPagination } = require('../utils/helpers');
 
 const machineIncludes = [
   { model: User, as: 'createdBy', attributes: ['id', 'name', 'role'] },
+  { model: Department, as: 'department', attributes: ['id', 'name'] },
 ];
 
 /**
@@ -18,7 +20,8 @@ const getAllMachines = async (req, res, next) => {
 
     const where = {};
     if (status) where.status = status;
-    if (search) where.name = { [Op.iLike]: `%${search}%` };
+    if (search) where.name = { [Op.like]: `%${search}%` };
+    if (req.query.departmentId) where.departmentId = req.query.departmentId;
 
     const { count, rows } = await Machine.findAndCountAll({
       where,
@@ -55,7 +58,7 @@ const createMachine = async (req, res, next) => {
   try {
     const { name, description, note } = req.body;
 
-    const existing = await Machine.findOne({ where: { name: { [Op.iLike]: name } } });
+    const existing = await Machine.findOne({ where: { name: { [Op.like]: name } } });
     if (existing) return error(res, 'A machine with this name already exists.', 409);
 
     const machine = await Machine.create({
@@ -63,6 +66,7 @@ const createMachine = async (req, res, next) => {
       description: description || null,
       note: note || null,
       createdById: req.user.id,
+      departmentId: req.body.departmentId || null,
     });
 
     const created = await Machine.findByPk(machine.id, { include: machineIncludes });
@@ -81,13 +85,14 @@ const updateMachine = async (req, res, next) => {
     const machine = await Machine.findByPk(req.params.id);
     if (!machine) return error(res, 'Machine not found.', 404);
 
-    const { name, description, status, note } = req.body;
+    const { name, description, status, note, departmentId } = req.body;
 
     await machine.update({
       ...(name !== undefined && { name: name.toUpperCase() }),
       ...(description !== undefined && { description }),
       ...(status !== undefined && { status }),
       ...(note !== undefined && { note }),
+      ...(departmentId !== undefined && { departmentId }),
     });
 
     const updated = await Machine.findByPk(machine.id, { include: machineIncludes });

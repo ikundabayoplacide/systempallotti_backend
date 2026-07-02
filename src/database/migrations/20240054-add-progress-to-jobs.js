@@ -16,9 +16,7 @@ module.exports = {
   },
 
   async down(queryInterface) {
-    const tableDesc = await queryInterface.describeTable('jobs');
-    if (tableDesc.progress) await queryInterface.removeColumn('jobs', 'progress');
-    if (tableDesc.resumedAt) await queryInterface.removeColumn('jobs', 'resumedAt');
-    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_jobs_progress";');
+    await queryInterface.removeColumn('jobs', 'progress');
+    await queryInterface.removeColumn('jobs', 'resumedAt');
   },
 };

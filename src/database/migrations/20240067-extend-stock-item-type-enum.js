@@ -1,17 +1,17 @@
 'use strict';
 
 module.exports = {
-  async up(queryInterface) {
-    // Postgres requires adding ENUM values one at a time
-    await queryInterface.sequelize.query(`
-      ALTER TYPE "enum_stock_items_type" ADD VALUE IF NOT EXISTS 'general';
-    `);
-    await queryInterface.sequelize.query(`
-      ALTER TYPE "enum_stock_items_type" ADD VALUE IF NOT EXISTS 'binding';
-    `);
+  async up(queryInterface, Sequelize) {
+    await queryInterface.changeColumn('stock_items', 'type', {
+      type: Sequelize.ENUM('printing', 'general', 'binding'),
+      allowNull: true,
+    });
   },
 
-  async down() {
-    // Postgres does not support removing ENUM values; manual rollback required
+  async down(queryInterface, Sequelize) {
+    await queryInterface.changeColumn('stock_items', 'type', {
+      type: Sequelize.ENUM('printing'),
+      allowNull: true,
+    });
   },
 };

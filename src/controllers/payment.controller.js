@@ -125,7 +125,7 @@ const getAllPayments = async (req, res, next) => {
 
     if (search) {
       where[Op.or] = [
-        { receiptNo: { [Op.iLike]: `%${search}%` } },
+        { receiptNo: { [Op.like]: `%${search}%` } },
       ];
     }
 

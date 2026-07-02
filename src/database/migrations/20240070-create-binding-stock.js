@@ -65,6 +65,5 @@ module.exports = {
     await queryInterface.dropTable('binding_stock_sorties');
     await queryInterface.dropTable('binding_stock_entries');
     await queryInterface.dropTable('binding_stock_items');
-    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_binding_stock_sorties_status";');
   },
 };

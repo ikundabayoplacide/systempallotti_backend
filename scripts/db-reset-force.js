@@ -1,20 +1,20 @@
 /**
- * Force-drops ALL tables in the database (CASCADE), then re-runs migrations and seeds.
+ * Force-drops ALL tables in the database, then re-runs migrations and seeds.
  * Usage: node scripts/db-reset-force.js
  */
-require('dotenv').config();
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 const { execSync } = require('child_process');
 const { Sequelize } = require('sequelize');
 
-const sequelize = new Sequelize(process.env.DATABASE_URL, {
-  dialect: 'postgres',
+const dbUrl = process.env.DATABASE_URL;
+if (!dbUrl) {
+  console.error('❌ DATABASE_URL is not defined in .env');
+  process.exit(1);
+}
+
+const sequelize = new Sequelize(dbUrl, {
+  dialect: 'mysql',
   logging: false,
-  dialectOptions: {
-    ssl: {
-      require: true,
-      rejectUnauthorized: false,
-    },
-  },
 });
 
 (async () => {
@@ -22,20 +22,21 @@ const sequelize = new Sequelize(process.env.DATABASE_URL, {
     console.log('🔌 Connecting to database...');
     await sequelize.authenticate();
 
-    console.log('💣 Dropping all tables and types with CASCADE...');
-    await sequelize.query(`
-      DO $$ DECLARE
-        r RECORD;
-      BEGIN
-        FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
-          EXECUTE 'DROP TABLE IF EXISTS ' || quote_ident(r.tablename) || ' CASCADE';
-        END LOOP;
-        FOR r IN (SELECT typname FROM pg_type JOIN pg_namespace ON pg_namespace.oid = pg_type.typnamespace WHERE pg_namespace.nspname = 'public' AND pg_type.typtype = 'e') LOOP
-          EXECUTE 'DROP TYPE IF EXISTS public.' || quote_ident(r.typname) || ' CASCADE';
-        END LOOP;
-      END $$;
-    `);
-    console.log('✅ All tables and enum types dropped.');
+    console.log('💣 Dropping all tables...');
+    await sequelize.query('SET FOREIGN_KEY_CHECKS = 0;');
+
+    const [tables] = await sequelize.query(
+      `SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE();`
+    );
+
+    for (const row of tables) {
+      const table = row.table_name || row.TABLE_NAME;
+      await sequelize.query(`DROP TABLE IF EXISTS \`${table}\`;`);
+      console.log(`  dropped: ${table}`);
+    }
+
+    await sequelize.query('SET FOREIGN_KEY_CHECKS = 1;');
+    console.log('✅ All tables dropped.');
 
     await sequelize.close();
 

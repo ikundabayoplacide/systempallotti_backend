@@ -14,7 +14,7 @@ const getAllProducts = async (req, res, next) => {
     const where = { isActive: true };
     if (search) {
       where[Op.or] = ['name', 'description'].map((field) => ({
-        [field]: { [Op.iLike]: `%${search}%` },
+        [field]: { [Op.like]: `%${search}%` },
       }));
     }
     if (category) where.category = category;

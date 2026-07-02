@@ -50,6 +50,5 @@ module.exports = {
 
   async down(queryInterface) {
     await queryInterface.dropTable('role_permissions');
-    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_role_permissions_role";');
   },
 };

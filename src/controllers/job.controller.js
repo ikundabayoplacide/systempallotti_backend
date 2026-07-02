@@ -72,9 +72,9 @@ const getAllJobs = async (req, res, next) => {
 
     if (search) {
       where[Op.or] = [
-        { jobNumber: { [Op.iLike]: `%${search}%` } },
-        { title: { [Op.iLike]: `%${search}%` } },
-        { description: { [Op.iLike]: `%${search}%` } },
+        { jobNumber: { [Op.like]: `%${search}%` } },
+        { title: { [Op.like]: `%${search}%` } },
+        { description: { [Op.like]: `%${search}%` } },
       ];
     }
 
@@ -335,6 +335,20 @@ const updateJob = async (req, res, next) => {
       ...(departmentAssignedToId !== undefined && { departmentAssignedToId }),
     });
 
+    // Sync the draft proforma amount when job amount changes
+    if (amount !== undefined) {
+      const proforma = await Proforma.findOne({
+        where: { jobId: job.id, status: 'draft' },
+        order: [['createdAt', 'DESC']],
+      });
+      if (proforma) {
+        const sub = parseFloat(amount || 0);
+        const taxAmt = parseFloat(((sub * parseFloat(proforma.taxRate)) / 100).toFixed(2));
+        const total = parseFloat((sub + taxAmt - parseFloat(proforma.discount)).toFixed(2));
+        await proforma.update({ subtotal: sub, taxAmount: taxAmt, totalAmount: total });
+      }
+    }
+
     const updated = await Job.findByPk(job.id, { include: jobIncludes });
     return success(res, updated, 'Job updated successfully.');
   } catch (err) {
@@ -588,8 +602,8 @@ const getCompletedAndPaidJobs = async (req, res, next) => {
 
     if (search) {
       where[Op.or] = [
-        { jobNumber: { [Op.iLike]: `%${search}%` } },
-        { title: { [Op.iLike]: `%${search}%` } },
+        { jobNumber: { [Op.like]: `%${search}%` } },
+        { title: { [Op.like]: `%${search}%` } },
       ];
     }
 
@@ -839,9 +853,9 @@ const getJobsByDepartment = async (req, res, next) => {
     if (priority) where.priority = priority;
     if (search) {
       where[Op.or] = [
-        { jobNumber: { [Op.iLike]: `%${search}%` } },
-        { title: { [Op.iLike]: `%${search}%` } },
-        { description: { [Op.iLike]: `%${search}%` } },
+        { jobNumber: { [Op.like]: `%${search}%` } },
+        { title: { [Op.like]: `%${search}%` } },
+        { description: { [Op.like]: `%${search}%` } },
       ];
     }
 

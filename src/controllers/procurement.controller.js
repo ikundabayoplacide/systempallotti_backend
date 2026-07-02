@@ -67,9 +67,9 @@ const getAllLeads = async (req, res, next) => {
 
     if (search) {
       where[Op.or] = [
-        { company: { [Op.iLike]: `%${search}%` } },
-        { contactPerson: { [Op.iLike]: `%${search}%` } },
-        { location: { [Op.iLike]: `%${search}%` } },
+        { company: { [Op.like]: `%${search}%` } },
+        { contactPerson: { [Op.like]: `%${search}%` } },
+        { location: { [Op.like]: `%${search}%` } },
       ];
     }
 

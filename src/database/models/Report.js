@@ -19,7 +19,7 @@ Report.init(
       allowNull: false,
     },
     items: {
-      type: DataTypes.JSONB,
+      type: DataTypes.JSON,
       allowNull: false,
       defaultValue: [],
     },
@@ -38,7 +38,7 @@ Report.init(
       field: 'created_by_id',
     },
     visibleTo: {
-      type: DataTypes.JSONB,
+      type: DataTypes.JSON,
       allowNull: true,
       field: 'visible_to',
       defaultValue: null,

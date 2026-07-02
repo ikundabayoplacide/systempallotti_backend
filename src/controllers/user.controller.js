@@ -54,7 +54,7 @@ const getAllUsers = async (req, res, next) => {
     const where = {};
     if (search) {
       where[Op.or] = ['name', 'email'].map((field) => ({
-        [field]: { [Op.iLike]: `%${search}%` },
+        [field]: { [Op.like]: `%${search}%` },
       }));
     }
     if (role) where.role = role;
