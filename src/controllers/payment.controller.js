@@ -6,6 +6,7 @@ const Customer = require('../database/models/Customer');
 const { success, error, paginated } = require('../utils/apiResponse');
 const { getPagination } = require('../utils/helpers');
 const notify = require('../utils/notification.service');
+const { adjustBalance } = require('../utils/fundBalance');
 
 const paymentIncludes = [
   {
@@ -85,6 +86,9 @@ const createPayment = async (req, res, next) => {
 
     // Update job paymentStatus to 'paid'
     await job.update({ paymentStatus: 'paid' });
+
+    // Payment received → add to balance
+    await adjustBalance('add', paid);
 
     // Notify ADMIN and DAF users
     await notify({

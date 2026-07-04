@@ -56,6 +56,7 @@ const JobSpec = require('./JobSpec');
 const JobSpecDocument = require('./JobSpecDocument');
 const DepartmentSample = require('./DepartmentSample');
 const DepartmentSampleDocument = require('./DepartmentSampleDocument');
+const Withdrawal = require('./Withdrawal');
 // ProcurementLead → User (created by)
 ProcurementLead.belongsTo(User, { foreignKey: 'createdById', as: 'createdBy' });
 User.hasMany(ProcurementLead, { foreignKey: 'createdById', as: 'procurementLeads' });
@@ -459,4 +460,8 @@ DepartmentSample.hasMany(DepartmentSampleDocument, { foreignKey: 'sampleId', as:
 DepartmentSampleDocument.belongsTo(User, { foreignKey: 'uploadedById', as: 'uploadedBy' });
 User.hasMany(DepartmentSampleDocument, { foreignKey: 'uploadedById', as: 'sampleDocuments' });
 
-module.exports = { User, Customer, Job, Department, Notification, NotificationRead, Payment, BoutiqueCategory, BoutiqueProduct, BoutiqueStockMovement, StockItem, StockEntry, StockSortie, JobItem, Proforma, CustomerVisit, Permission, RolePermission, Role, Invoice, EmployeeJobAssignment, MaterialRequest, MaterialRequestItem, BoutiqueStockRequest, BoutiqueStockRequestItem, BoutiqueSale, Report, Hobe, HobeSale, JobDocument, ProcurementLead, ProcurementLeadDocument, RecoveryRecord, Outstand, CasualWorker, Payroll, BoutiqueStockItem, BoutiqueStockEntry, BoutiqueStockSortie, GeneralStockItem, GeneralStockEntry, GeneralStockSortie, BindingStockItem, BindingStockEntry, BindingStockSortie, Machine, MachineAssignment, JobSpec, JobSpecDocument, DepartmentSample, DepartmentSampleDocument };
+// Withdrawal -> User (recorded by)
+Withdrawal.belongsTo(User, { foreignKey: 'recordedById', as: 'recordedBy' });
+User.hasMany(Withdrawal, { foreignKey: 'recordedById', as: 'withdrawals' });
+
+module.exports = { User, Customer, Job, Department, Notification, NotificationRead, Payment, BoutiqueCategory, BoutiqueProduct, BoutiqueStockMovement, StockItem, StockEntry, StockSortie, JobItem, Proforma, CustomerVisit, Permission, RolePermission, Role, Invoice, EmployeeJobAssignment, MaterialRequest, MaterialRequestItem, BoutiqueStockRequest, BoutiqueStockRequestItem, BoutiqueSale, Report, Hobe, HobeSale, JobDocument, ProcurementLead, ProcurementLeadDocument, RecoveryRecord, Outstand, CasualWorker, Payroll, BoutiqueStockItem, BoutiqueStockEntry, BoutiqueStockSortie, GeneralStockItem, GeneralStockEntry, GeneralStockSortie, BindingStockItem, BindingStockEntry, BindingStockSortie, Machine, MachineAssignment, JobSpec, JobSpecDocument, DepartmentSample, DepartmentSampleDocument, Withdrawal };

@@ -12,7 +12,9 @@ LeaveRequest.init(
       allowNull: false,
     },
     startDate: { type: DataTypes.DATEONLY, allowNull: false, field: 'start_date' },
+    startTime: { type: DataTypes.STRING(5), allowNull: true, field: 'start_time' },
     endDate: { type: DataTypes.DATEONLY, allowNull: false, field: 'end_date' },
+    endTime: { type: DataTypes.STRING(5), allowNull: true, field: 'end_time' },
     reason: { type: DataTypes.TEXT, allowNull: false },
     status: {
       type: DataTypes.ENUM('PENDING', 'APPROVED', 'REJECTED', 'DONE'),

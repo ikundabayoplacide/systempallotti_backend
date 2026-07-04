@@ -4,6 +4,7 @@ const router = express.Router();
 const {
   getNextJobNumber,
   getJobByNumber,
+  getJobStats,
   getAllJobs,
   getJobById,
   getJobDetails,
@@ -48,6 +49,9 @@ router.use(authenticate);
 
 // Preview next job number (no body mutation)
 router.get('/next-number', getNextJobNumber);
+
+// Aggregated stats for dashboard
+router.get('/stats', getJobStats);
 
 // Find by job number (e.g. JOB-2026-001)
 router.get('/number/:jobNumber', getJobByNumber);

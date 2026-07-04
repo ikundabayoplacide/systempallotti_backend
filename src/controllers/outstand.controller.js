@@ -4,6 +4,7 @@ const User = require('../database/models/User');
 const { success, error, paginated } = require('../utils/apiResponse');
 const { getPagination } = require('../utils/helpers');
 const notify = require('../utils/notification.service');
+const { adjustBalance } = require('../utils/fundBalance');
 
 const userAttrs = ['id', 'name', 'email', 'role'];
 
@@ -80,19 +81,18 @@ const getOutstandById = async (req, res, next) => {
  */
 const createOutstand = async (req, res, next) => {
   try {
-    const { description, category, quantity = 1, unitCost, recipientName, recipientPhone, recipientRole, purpose, notes } = req.body;
+    const { description, category, amount, recipientName, recipientPhone, recipientRole, purpose, notes } = req.body;
 
-    const qty = parseFloat(quantity);
-    const cost = parseFloat(unitCost);
+    const total = parseFloat(amount);
     const ref = await generateRef();
 
     const outstand = await Outstand.create({
       ref,
       description,
       category,
-      quantity: qty,
-      unitCost: cost,
-      totalAmount: parseFloat((qty * cost).toFixed(2)),
+      quantity: 1,
+      unitCost: total,
+      totalAmount: total,
       recipientName,
       recipientPhone: recipientPhone || null,
       recipientRole: recipientRole || null,
@@ -106,7 +106,7 @@ const createOutstand = async (req, res, next) => {
     await notify({
       createdById: req.user.id,
       title: 'New Expense Recorded',
-      message: `Expense "${description}" (${ref}) of ${parseFloat((parseFloat(quantity || 1) * parseFloat(unitCost)).toFixed(2))} recorded by ${req.user.name || req.user.email}.`,
+      message: `Expense "${description}" (${ref}) of ${total} recorded by ${req.user.name || req.user.email}.`,
       type: 'OUTSTAND_CREATED',
       relatedEntityType: 'outstand',
       relatedEntityId: outstand.id,
@@ -137,10 +137,9 @@ const updateOutstand = async (req, res, next) => {
       return error(res, `Cannot edit an outstand with status "${outstand.status}". Only pending outstands can be edited.`, 400);
     }
 
-    const { description, category, quantity, unitCost, recipientName, recipientPhone, recipientRole, purpose, notes } = req.body;
+    const { description, category, amount, recipientName, recipientPhone, recipientRole, purpose, notes } = req.body;
 
-    const qty = quantity !== undefined ? parseFloat(quantity) : parseFloat(outstand.quantity);
-    const cost = unitCost !== undefined ? parseFloat(unitCost) : parseFloat(outstand.unitCost);
+    const total = amount !== undefined ? parseFloat(amount) : parseFloat(outstand.totalAmount);
 
     await outstand.update({
       ...(description !== undefined && { description }),
@@ -150,9 +149,9 @@ const updateOutstand = async (req, res, next) => {
       ...(recipientRole !== undefined && { recipientRole }),
       ...(purpose !== undefined && { purpose }),
       ...(notes !== undefined && { notes }),
-      quantity: qty,
-      unitCost: cost,
-      totalAmount: parseFloat((qty * cost).toFixed(2)),
+      quantity: 1,
+      unitCost: total,
+      totalAmount: total,
     });
 
     const updated = await Outstand.findByPk(outstand.id, { include: outstandIncludes });
@@ -215,12 +214,31 @@ const markAsPaid = async (req, res, next) => {
       return error(res, `Cannot mark as paid — outstand must be approved first (current: "${outstand.status}").`, 400);
     }
 
+    const amount = parseFloat(outstand.totalAmount);
     await outstand.update({ status: 'paid', paidAt: new Date() });
+
+    // Expense paid → deduct from balance
+    const newBalance = await adjustBalance('deduct', amount);
+
     const updated = await Outstand.findByPk(outstand.id, { include: outstandIncludes });
-    return success(res, updated, 'Outstand marked as paid.');
+    return success(res, { outstand: updated, totalBalance: newBalance }, 'Outstand marked as paid.');
   } catch (err) {
     next(err);
   }
 };
 
-module.exports = { getAllOutstands, getOutstandById, createOutstand, updateOutstand, approveOutstand, rejectOutstand, markAsPaid };
+const deleteOutstand = async (req, res, next) => {
+  try {
+    const outstand = await Outstand.findByPk(req.params.id);
+    if (!outstand) return error(res, 'Outstand not found.', 404);
+    if (outstand.status === 'paid') {
+      return error(res, 'Cannot delete a paid expense.', 400);
+    }
+    await outstand.destroy();
+    return success(res, null, 'Outstand deleted successfully.');
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { getAllOutstands, getOutstandById, createOutstand, updateOutstand, approveOutstand, rejectOutstand, markAsPaid, deleteOutstand };

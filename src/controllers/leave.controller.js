@@ -64,7 +64,7 @@ const getLeaveById = async (req, res, next) => {
  */
 const createLeave = async (req, res, next) => {
   try {
-    const { type, startDate, endDate, reason } = req.body;
+    const { type, startDate, startTime, endDate, endTime, reason } = req.body;
     const documentUrl = req.file
       ? `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`
       : req.body.documentUrl || null;
@@ -74,14 +74,14 @@ const createLeave = async (req, res, next) => {
 
     const leave = await LeaveRequest.create({
       userId: req.user.id,
-      type, startDate, endDate, reason,
+      type, startDate, startTime: startTime || null, endDate, endTime: endTime || null, reason,
       documentUrl: documentUrl || null,
     });
 
     await notify({
       createdById: req.user.id,
       title: 'New Leave Request',
-      message: `${req.user.name} submitted a ${type} leave request from ${startDate} to ${endDate}.`,
+      message: `${req.user.name} submitted a ${type} leave request from ${startDate}${startTime ? ' ' + startTime : ''} to ${endDate}${endTime ? ' ' + endTime : ''}.`,
       type: 'GENERAL',
       relatedEntityType: 'leave_request',
       relatedEntityId: leave.id,
@@ -179,7 +179,7 @@ const updateLeave = async (req, res, next) => {
     if (leave.userId !== req.user.id) return error(res, 'Forbidden.', 403);
     if (leave.status !== 'PENDING') return error(res, 'Only pending leave requests can be edited.', 409);
 
-    const { type, startDate, endDate, reason } = req.body;
+    const { type, startDate, startTime, endDate, endTime, reason } = req.body;
     const documentUrl = req.file
       ? `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`
       : req.body.documentUrl !== undefined ? req.body.documentUrl : undefined;
@@ -192,7 +192,9 @@ const updateLeave = async (req, res, next) => {
     await leave.update({
       ...(type !== undefined && { type }),
       ...(startDate !== undefined && { startDate }),
+      ...(startTime !== undefined && { startTime: startTime || null }),
       ...(endDate !== undefined && { endDate }),
+      ...(endTime !== undefined && { endTime: endTime || null }),
       ...(reason !== undefined && { reason }),
       ...(documentUrl !== undefined && { documentUrl }),
     });

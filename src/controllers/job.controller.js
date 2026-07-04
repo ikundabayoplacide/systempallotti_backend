@@ -29,8 +29,64 @@ const jobIncludes = [
 ];
 
 /**
- * GET /api/jobs/number/:jobNumber
+ * GET /api/jobs/stats
+ * Aggregated KPIs for the admin dashboard.
  */
+const getJobStats = async (req, res, next) => {
+  try {
+    const { sequelize } = require('../config/database');
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+    const todayEnd   = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+    const inProgressStatuses = ['confirmed','in-composition','in-montage','in-printing','in-binding','in-packaging','quality-check','ready-for-delivery'];
+    const inProgressList = inProgressStatuses.map(s => `'${s}'`).join(',');
+
+    const [[totals]] = await sequelize.query(`
+      SELECT
+        COUNT(*) AS totalJobs,
+        COALESCE(SUM(amount), 0) AS totalRevenue,
+        SUM(CASE WHEN status IN (${inProgressList}) THEN 1 ELSE 0 END) AS inProgress,
+        SUM(CASE WHEN status IN ('completed','delivered') AND completedAt >= :todayStart AND completedAt <= :todayEnd THEN 1 ELSE 0 END) AS completedToday,
+        SUM(CASE WHEN dueDate < :now AND status NOT IN ('completed','delivered') THEN 1 ELSE 0 END) AS delayed
+      FROM jobs
+    `, { replacements: { now, todayStart, todayEnd } });
+
+    const [[payTotals]] = await sequelize.query(
+      `SELECT COALESCE(SUM(amountPaid), 0) AS totalPaid FROM payments WHERE receiptNo IS NOT NULL`
+    );
+
+    const [[expenseToday]] = await sequelize.query(
+      `SELECT COALESCE(SUM(totalAmount), 0) AS total, COUNT(*) AS count FROM outstands WHERE status = 'paid' AND paidAt >= :todayStart AND paidAt <= :todayEnd`,
+      { replacements: { todayStart, todayEnd } }
+    );
+
+    const [[withdrawalToday]] = await sequelize.query(
+      `SELECT COALESCE(SUM(amount), 0) AS total, COUNT(*) AS count FROM withdrawals WHERE withdrawnAt >= :todayStart AND withdrawnAt <= :todayEnd`,
+      { replacements: { todayStart, todayEnd } }
+    );
+
+    const totalRevenue = parseFloat(totals.totalRevenue);
+    const totalPaid    = parseFloat(payTotals.totalPaid);
+
+    return success(res, {
+      totalJobs:           parseInt(totals.totalJobs),
+      inProgress:          parseInt(totals.inProgress),
+      completedToday:      parseInt(totals.completedToday),
+      delayed:             parseInt(totals.delayed),
+      totalRevenue,
+      totalPaid,
+      outstanding:         Math.max(0, totalRevenue - totalPaid),
+      expensesToday:       parseFloat(expenseToday.total),
+      expensesCountToday:  parseInt(expenseToday.count),
+      withdrawalsToday:    parseFloat(withdrawalToday.total),
+      withdrawalsCountToday: parseInt(withdrawalToday.count),
+    }, 'Job stats retrieved.');
+  } catch (err) {
+    next(err);
+  }
+};
+
 const getJobByNumber = async (req, res, next) => {
   try {
     const job = await Job.findOne({
@@ -972,6 +1028,7 @@ const verifyJob = async (req, res, next) => {
 module.exports = {
   getNextJobNumber,
   getJobByNumber,
+  getJobStats,
   getAllJobs,
   getJobById,
   getJobDetails,
