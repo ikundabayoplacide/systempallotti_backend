@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
+const path = require('path');
 const env = require('../config/env');
 
 const { createReport, getAllReports, getReportById, updateReport, deleteReport, getMyReports, getAssignedReports } = require('../controllers/report.controller');
@@ -17,8 +18,16 @@ const allowedMimes = [
   'image/webp',
 ];
 
+const storage = multer.diskStorage({
+  destination: path.join(__dirname, '../../uploads/reports'),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `report-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
+  },
+});
+
 const upload = multer({
-  storage: multer.memoryStorage(),
+  storage,
   limits: { fileSize: env.maxFileSize },
   fileFilter: (req, file, cb) => {
     allowedMimes.includes(file.mimetype)

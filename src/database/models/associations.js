@@ -281,6 +281,10 @@ Customer.hasMany(BoutiqueSale, { foreignKey: 'customerId', as: 'boutiqueSales' }
 Report.belongsTo(User, { foreignKey: 'createdById', as: 'createdBy' });
 User.hasMany(Report, { foreignKey: 'createdById', as: 'reports' });
 
+// Report → User (supervisor)
+Report.belongsTo(User, { foreignKey: 'supervisorId', as: 'supervisor' });
+User.hasMany(Report, { foreignKey: 'supervisorId', as: 'supervisedReports' });
+
 // Hobe → User (created by)
 Hobe.belongsTo(User, { foreignKey: 'createdById', as: 'createdBy' });
 User.hasMany(Hobe, { foreignKey: 'createdById', as: 'hobes' });

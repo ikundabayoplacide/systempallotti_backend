@@ -43,6 +43,12 @@ Report.init(
       field: 'visible_to',
       defaultValue: null,
     },
+    supervisorId: {
+      type: DataTypes.UUID,
+      allowNull: true,
+      defaultValue: null,
+      field: 'supervisor_id',
+    },
   },
   {
     sequelize,

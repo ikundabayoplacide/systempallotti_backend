@@ -56,6 +56,9 @@ const withdrawalRoutes = require('./src/routes/withdrawal.routes');
 
 const app = express();
 
+// Serve uploaded files
+app.use('/uploads', express.static(require('path').join(__dirname, 'uploads')));
+
 // Security & parsing middleware
 app.use(helmet());
 app.use(cors());

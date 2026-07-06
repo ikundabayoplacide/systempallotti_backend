@@ -29,6 +29,38 @@ const getMyLeaves = async (req, res, next) => {
 };
 
 /**
+ * GET /api/leaves/department
+ * Supervisor: see leaves from workers in the same department
+ */
+const getDepartmentLeaves = async (req, res, next) => {
+  try {
+    if (!req.user.departmentId) return error(res, 'You are not assigned to a department.', 403);
+
+    const { page, limit, skip } = getPagination(req.query);
+    const where = {};
+    if (req.query.status) where.status = req.query.status;
+
+    const { count, rows } = await LeaveRequest.findAndCountAll({
+      where,
+      offset: skip,
+      limit,
+      order: [['createdAt', 'DESC']],
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'name', 'email', 'role'],
+          where: { departmentId: req.user.departmentId },
+        },
+        { model: User, as: 'reviewedBy', attributes: ['id', 'name', 'email', 'role'], required: false },
+      ],
+    });
+
+    return paginated(res, rows, count, page, limit);
+  } catch (err) { next(err); }
+};
+
+/**
  * GET /api/leaves
  * HR / Admin only
  */
@@ -85,7 +117,7 @@ const createLeave = async (req, res, next) => {
       type: 'GENERAL',
       relatedEntityType: 'leave_request',
       relatedEntityId: leave.id,
-      targetRoles: ['ADMIN', 'HR'],
+      targetRoles: ['ADMIN', 'HR', 'SUPERVISOR'],
     });
 
     const created = await LeaveRequest.findByPk(leave.id, { include: leaveIncludes });
@@ -129,6 +161,7 @@ const reviewLeave = async (req, res, next) => {
       relatedEntityType: 'leave_request',
       relatedEntityId: leave.id,
       targetUserIds: [leave.userId],
+      targetRoles: ['ADMIN', 'HR'],
     });
 
     const updated = await LeaveRequest.findByPk(leave.id, { include: leaveIncludes });
@@ -204,4 +237,4 @@ const updateLeave = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-module.exports = { getMyLeaves, getAllLeaves, getLeaveById, createLeave, updateLeave, reviewLeave, cancelLeave, uploadDocument };
+module.exports = { getMyLeaves, getAllLeaves, getDepartmentLeaves, getLeaveById, createLeave, updateLeave, reviewLeave, cancelLeave, uploadDocument };

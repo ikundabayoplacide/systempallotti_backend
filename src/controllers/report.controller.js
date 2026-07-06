@@ -1,4 +1,4 @@
-const { Op } = require('sequelize');
+const { Op, literal } = require('sequelize');
 const Report = require('../database/models/Report');
 const User = require('../database/models/User');
 const { success, error, paginated } = require('../utils/apiResponse');
@@ -7,6 +7,7 @@ const notify = require('../utils/notification.service');
 
 const reportIncludes = [
   { model: User, as: 'createdBy', attributes: ['id', 'name', 'email', 'role', 'phone'] },
+  { model: User, as: 'supervisor', attributes: ['id', 'name', 'email', 'role', 'phone'], required: false },
 ];
 
 /**
@@ -37,9 +38,9 @@ const createReport = async (req, res, next) => {
       }
     }
 
-    const attachmentUrl = req.file
-      ? `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`
-      : null;
+    const supervisorId = req.body.supervisorId || null;
+
+    const attachmentUrl = req.file ? `/uploads/reports/${req.file.filename}` : null;
 
     const report = await Report.create({
       title,
@@ -49,6 +50,7 @@ const createReport = async (req, res, next) => {
       attachmentUrl,
       createdById: req.user.id,
       visibleTo,
+      supervisorId,
     });
 
     await notify({
@@ -59,6 +61,7 @@ const createReport = async (req, res, next) => {
       relatedEntityType: 'report',
       relatedEntityId: report.id,
       targetRoles: visibleTo || ['ADMIN'],
+      targetUserIds: supervisorId ? [supervisorId] : [],
     });
 
     const created = await Report.findByPk(report.id, { include: reportIncludes });
@@ -100,12 +103,20 @@ const getAllReports = async (req, res, next) => {
     const userRole = req.user.role;
 
     // Admin can see all reports
-    const whereCondition = userRole === 'ADMIN' 
-      ? {} 
+    const whereCondition = userRole === 'ADMIN'
+      ? {}
       : {
           [Op.or]: [
-            { visibleTo: { [Op.contains]: [userRole] } },
-            { visibleTo: null }, // legacy reports with no visibility set
+            // Reports with a specific supervisor → only that supervisor sees it
+            { supervisorId: req.user.id },
+            // Reports with no supervisorId → fall back to role-based visibleTo
+            {
+              supervisorId: null,
+              [Op.or]: [
+                literal(`JSON_CONTAINS(\`Report\`.\`visible_to\`, '"${userRole}"')`),
+                { visibleTo: null },
+              ],
+            },
           ],
         };
 
@@ -134,9 +145,15 @@ const getReportById = async (req, res, next) => {
     const whereCondition = { id: req.params.id };
     if (userRole !== 'ADMIN') {
       whereCondition[Op.or] = [
-        { visibleTo: { [Op.contains]: [userRole] } },
-        { visibleTo: null }, // legacy reports
-        { createdById: req.user.id }, // creator can always see their own reports
+        { createdById: req.user.id },
+        { supervisorId: req.user.id },
+        {
+          supervisorId: null,
+          [Op.or]: [
+            literal(`JSON_CONTAINS(\`Report\`.\`visible_to\`, '"${userRole}"')`),
+            { visibleTo: null },
+          ],
+        },
       ];
     }
 
@@ -192,9 +209,9 @@ const updateReport = async (req, res, next) => {
       }
     }
 
-    const attachmentUrl = req.file
-      ? `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`
-      : report.attachmentUrl;
+    const supervisorId = req.body.supervisorId !== undefined ? (req.body.supervisorId || null) : report.supervisorId;
+
+    const attachmentUrl = req.file ? `/uploads/reports/${req.file.filename}` : report.attachmentUrl;
 
     await report.update({
       ...(title !== undefined && { title }),
@@ -203,6 +220,7 @@ const updateReport = async (req, res, next) => {
       items,
       attachmentUrl,
       visibleTo,
+      supervisorId,
     });
 
     const updated = await Report.findByPk(report.id, { include: reportIncludes });
@@ -237,8 +255,14 @@ const getAssignedReports = async (req, res, next) => {
 
     const { count, rows } = await Report.findAndCountAll({
       where: {
-        visibleTo: { [Op.contains]: [userRole] },
-        createdById: { [Op.ne]: req.user.id }, // exclude own reports
+        createdById: { [Op.ne]: req.user.id },
+        [Op.or]: [
+          { supervisorId: req.user.id },
+          {
+            supervisorId: null,
+            [Op.and]: [literal(`JSON_CONTAINS(\`Report\`.\`visible_to\`, '"${userRole}"')`)],
+          },
+        ],
       },
       offset: skip,
       limit,
