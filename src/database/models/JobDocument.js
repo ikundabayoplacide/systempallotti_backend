@@ -27,7 +27,7 @@ JobDocument.init(
       allowNull: false,
     },
     fileUrl: {
-      type: DataTypes.TEXT,
+      type: DataTypes.TEXT('long'),
       allowNull: false,
       comment: 'Base64 encoded file content with data URI prefix',
     },

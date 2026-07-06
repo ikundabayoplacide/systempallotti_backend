@@ -9,12 +9,18 @@ const { success, error, paginated } = require('../utils/apiResponse');
 const { getPagination } = require('../utils/helpers');
 
 const proformaIncludes = [
-  { model: Job, as: 'job', attributes: ['id', 'jobNumber', 'title', 'status', 'jobType', 'quantity', 'size', 'colorMode', 'bindingType', 'dueDate'],
+  {
+    model: Job, as: 'job',
+    attributes: ['id', 'jobNumber', 'title', 'status', 'jobType', 'quantity', 'size', 'colorMode', 'bindingType', 'dueDate', 'amount'],
     include: [
-      { model: JobItem, as: 'jobItems', include: [{ model: StockItem, as: 'stockItem', attributes: ['id', 'itemName', 'unit', 'unitCost'] }] },
+      {
+        model: JobItem, as: 'jobItems',
+        attributes: ['id', 'itemName', 'unit', 'unitCost', 'quantityNeeded', 'totalCost', 'notes'],
+        include: [{ model: StockItem, as: 'stockItem', attributes: ['id', 'itemName', 'unit'] }],
+      },
     ],
   },
-  { model: Customer, as: 'customer', attributes: ['id', 'name', 'email', 'phone', 'company'] },
+  { model: Customer, as: 'customer', attributes: ['id', 'name', 'email', 'phone', 'company', 'tin', 'address'] },
   { model: User, as: 'createdBy', attributes: ['id', 'name', 'email', 'role'] },
 ];
 

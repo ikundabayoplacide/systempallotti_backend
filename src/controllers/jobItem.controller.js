@@ -1,7 +1,28 @@
 const JobItem = require('../database/models/JobItem');
 const Job = require('../database/models/Job');
 const StockItem = require('../database/models/StockItem');
+const Proforma = require('../database/models/Proforma');
 const { success, error } = require('../utils/apiResponse');
+
+// Recompute job.amount from all its items and sync the draft proforma
+const syncJobAmount = async (jobId) => {
+  const items = await JobItem.findAll({ where: { jobId } });
+  const total = items.reduce((sum, i) => sum + (parseFloat(i.totalCost) || 0), 0);
+
+  await Job.update({ amount: total }, { where: { id: jobId } });
+
+  const proforma = await Proforma.findOne({
+    where: { jobId, status: 'draft' },
+    order: [['createdAt', 'DESC']],
+  });
+  if (proforma) {
+    const tax = parseFloat(proforma.taxRate) || 0;
+    const disc = parseFloat(proforma.discount) || 0;
+    const taxAmount = parseFloat(((total * tax) / 100).toFixed(2));
+    const totalAmount = parseFloat((total + taxAmount - disc).toFixed(2));
+    await proforma.update({ subtotal: total, taxAmount, totalAmount });
+  }
+};
 
 const jobItemIncludes = [
   { model: StockItem, as: 'stockItem', attributes: ['id', 'itemName', 'category', 'unit', 'currentStock'] },
@@ -65,6 +86,7 @@ const addJobItem = async (req, res, next) => {
       notes: notes || null,
     });
 
+    await syncJobAmount(req.params.jobId);
     const created = await JobItem.findByPk(jobItem.id, { include: jobItemIncludes });
     return success(res, created, 'Item added to job successfully.', 201);
   } catch (err) {
@@ -99,6 +121,7 @@ const updateJobItem = async (req, res, next) => {
       totalCost,
     });
 
+    await syncJobAmount(req.params.jobId);
     const updated = await JobItem.findByPk(jobItem.id, { include: jobItemIncludes });
     return success(res, updated, 'Job item updated successfully.');
   } catch (err) {
@@ -117,7 +140,9 @@ const removeJobItem = async (req, res, next) => {
     });
     if (!jobItem) return error(res, 'Job item not found.', 404);
 
+    const jobId = jobItem.jobId;
     await jobItem.destroy();
+    await syncJobAmount(jobId);
     return success(res, null, 'Item removed from job successfully.');
   } catch (err) {
     next(err);

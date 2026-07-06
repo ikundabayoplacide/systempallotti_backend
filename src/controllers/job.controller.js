@@ -391,18 +391,23 @@ const updateJob = async (req, res, next) => {
       ...(departmentAssignedToId !== undefined && { departmentAssignedToId }),
     });
 
-    // Sync the draft proforma amount when job amount changes
-    if (amount !== undefined) {
-      const proforma = await Proforma.findOne({
-        where: { jobId: job.id, status: 'draft' },
-        order: [['createdAt', 'DESC']],
-      });
-      if (proforma) {
-        const sub = parseFloat(amount || 0);
-        const taxAmt = parseFloat(((sub * parseFloat(proforma.taxRate)) / 100).toFixed(2));
-        const total = parseFloat((sub + taxAmt - parseFloat(proforma.discount)).toFixed(2));
-        await proforma.update({ subtotal: sub, taxAmount: taxAmt, totalAmount: total });
-      }
+    // Sync job amount from items totalCost sum, then update proforma
+    const allItems = await JobItem.findAll({ where: { jobId: job.id } });
+    const itemsTotal = allItems.reduce((sum, i) => sum + (parseFloat(i.totalCost) || 0), 0);
+    const effectiveAmount = itemsTotal > 0 ? itemsTotal : (amount !== undefined ? parseFloat(amount || 0) : parseFloat(job.amount || 0));
+
+    await job.update({ amount: effectiveAmount });
+
+    const proforma = await Proforma.findOne({
+      where: { jobId: job.id, status: 'draft' },
+      order: [['createdAt', 'DESC']],
+    });
+    if (proforma) {
+      const tax = parseFloat(proforma.taxRate) || 0;
+      const disc = parseFloat(proforma.discount) || 0;
+      const taxAmt = parseFloat(((effectiveAmount * tax) / 100).toFixed(2));
+      const totalAmount = parseFloat((effectiveAmount + taxAmt - disc).toFixed(2));
+      await proforma.update({ subtotal: effectiveAmount, taxAmount: taxAmt, totalAmount });
     }
 
     const updated = await Job.findByPk(job.id, { include: jobIncludes });
