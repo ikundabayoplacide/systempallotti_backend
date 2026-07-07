@@ -1,7 +1,10 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const { Op } = require('sequelize');
 const User = require('../database/models/User');
 const env = require('../config/env');
 const { success, error } = require('../utils/apiResponse');
+const { sendPasswordResetEmail } = require('../utils/mailer');
 
 /**
  * POST /api/auth/register
@@ -72,7 +75,7 @@ const getMe = async (req, res, next) => {
 };
 
 /**
- * PUT /api/auth/change-password
+ * POST /api/auth/change-password
  */
 const changePassword = async (req, res, next) => {
   try {
@@ -94,4 +97,53 @@ const changePassword = async (req, res, next) => {
   }
 };
 
-module.exports = { register, login, getMe, changePassword };
+/**
+ * POST /api/auth/forgot-password
+ */
+const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ where: { email } });
+
+    if (!user) return error(res, 'Email not found in the system.', 404);
+
+    const token = crypto.randomBytes(32).toString('hex');
+    user.reset_token = token;
+    user.reset_token_expires_at = new Date(Date.now() + 60 * 60 * 1000);
+    await user.save();
+    await sendPasswordResetEmail(user.email, user.name, token);
+
+    return success(res, null, 'Reset link sent');
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * POST /api/auth/reset-password
+ */
+const resetPassword = async (req, res, next) => {
+  try {
+    const { token, password } = req.body;
+
+    const user = await User.findOne({
+      where: {
+        reset_token: token,
+        reset_token_expires_at: { [Op.gt]: new Date() },
+      },
+    });
+
+    if (!user) return error(res, 'Invalid or expired reset token.', 400);
+
+    user.password = password;
+    user.reset_token = null;
+    user.reset_token_expires_at = null;
+    await user.save();
+
+    return success(res, null, 'Password reset successfully');
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { register, login, getMe, changePassword, forgotPassword, resetPassword };
