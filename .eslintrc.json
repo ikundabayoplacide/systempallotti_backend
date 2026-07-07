@@ -1,11 +1,11 @@
 {
   "env": {
     "node": true,
-    "es2021": true
+    "es6": true
   },
   "extends": "eslint:recommended",
   "parserOptions": {
-    "ecmaVersion": 2021,
+    "ecmaVersion": 2020,
     "sourceType": "commonjs"
   },
   "rules": {
@@ -17,7 +17,7 @@
     "no-empty": "warn",
     "eqeqeq": ["error", "always"],
     "no-var": "error",
-    "prefer-const": "warn"
-  },
-  "ignorePatterns": ["node_modules/", "logs/"]
+    "prefer-const": "warn",
+    "require-atomic-updates": "off"
+  }
 }
