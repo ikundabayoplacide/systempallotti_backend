@@ -104,14 +104,12 @@ const getUserById = async (req, res, next) => {
  */
 const updateUser = async (req, res, next) => {
   try {
-    const user = await User.findByPk(req.params.id, {
-      attributes: { exclude: ['password'] },
-    });
+    const user = await User.findByPk(req.params.id);
     if (!user) return error(res, 'User not found.', 404);
 
-    const { name, email, role, isActive, phone, departmentId, gender } = req.body;
+    const { name, email, role, isActive, phone, departmentId, gender, password } = req.body;
 
-    await user.update({
+    const updateData = {
       ...(name !== undefined && { name }),
       ...(email !== undefined && { email }),
       ...(role !== undefined && { role }),
@@ -119,7 +117,11 @@ const updateUser = async (req, res, next) => {
       ...(phone !== undefined && { phone }),
       ...(departmentId !== undefined && { departmentId }),
       ...(gender !== undefined && { gender }),
-    });
+    };
+
+    if (password) updateData.password = password;
+
+    await user.update(updateData);
 
     return success(res, user, 'User updated successfully.');
   } catch (err) {
@@ -128,14 +130,14 @@ const updateUser = async (req, res, next) => {
 };
 
 /**
- * DELETE /api/users/:id  (soft delete via paranoid)
+ * DELETE /api/users/:id
  */
 const deleteUser = async (req, res, next) => {
   try {
     const user = await User.findByPk(req.params.id);
     if (!user) return error(res, 'User not found.', 404);
 
-    await user.destroy(); // sets deletedAt timestamp (paranoid soft delete)
+    await user.destroy();
 
     return success(res, null, 'User deleted successfully.');
   } catch (err) {

@@ -22,78 +22,32 @@ class Proforma extends Model {
 
 Proforma.init(
   {
-    id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true,
-    },
-    proformaNo: {
-      type: DataTypes.STRING,
-      allowNull: false,
-      unique: true,
-      comment: 'Auto-generated e.g. PF-2026-001',
-    },
-    jobId: {
-      type: DataTypes.UUID,
-      allowNull: false,
-    },
-    customerId: {
-      type: DataTypes.UUID,
-      allowNull: false,
-    },
-    createdById: {
-      type: DataTypes.UUID,
-      allowNull: false,
-    },
-    subtotal: {
-      type: DataTypes.DECIMAL(12, 2),
-      allowNull: false,
-      defaultValue: 0,
-      comment: 'Amount before tax and discount',
-    },
-    taxRate: {
-      type: DataTypes.DECIMAL(5, 2),
-      allowNull: false,
-      defaultValue: 0,
-      comment: 'Tax percentage e.g. 18 for 18%',
-    },
-    taxAmount: {
-      type: DataTypes.DECIMAL(12, 2),
-      allowNull: false,
-      defaultValue: 0,
-      comment: 'Computed: subtotal * taxRate / 100',
-    },
-    discount: {
-      type: DataTypes.DECIMAL(12, 2),
-      allowNull: false,
-      defaultValue: 0,
-      comment: 'Discount amount in RWF',
-    },
-    totalAmount: {
-      type: DataTypes.DECIMAL(12, 2),
-      allowNull: false,
-      defaultValue: 0,
-      comment: 'Computed: subtotal + taxAmount - discount',
-    },
+    id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
+    proformaNo: { type: DataTypes.STRING, allowNull: false, unique: true },
+    // Optional link to a job
+    jobId: { type: DataTypes.UUID, allowNull: true },
+    customerId: { type: DataTypes.UUID, allowNull: true },
+    // Standalone info fields
+    jobNumber: { type: DataTypes.STRING, allowNull: true },
+    jobName: { type: DataTypes.STRING, allowNull: true },
+    clientName: { type: DataTypes.STRING, allowNull: true },
+    clientPhone: { type: DataTypes.STRING, allowNull: true },
+    jobCreatedAt: { type: DataTypes.DATE, allowNull: true },
+    // Financials
+    subtotal: { type: DataTypes.DECIMAL(12, 2), allowNull: false, defaultValue: 0 },
+    taxRate: { type: DataTypes.DECIMAL(5, 2), allowNull: false, defaultValue: 18 },
+    taxAmount: { type: DataTypes.DECIMAL(12, 2), allowNull: false, defaultValue: 0 },
+    discount: { type: DataTypes.DECIMAL(12, 2), allowNull: false, defaultValue: 0 },
+    totalAmount: { type: DataTypes.DECIMAL(12, 2), allowNull: false, defaultValue: 0 },
     status: {
       type: DataTypes.ENUM('draft', 'sent', 'accepted', 'rejected', 'expired'),
       defaultValue: 'draft',
       allowNull: false,
     },
-    validUntil: {
-      type: DataTypes.DATE,
-      allowNull: true,
-      comment: 'Expiry date of the proforma',
-    },
-    notes: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-    },
-    terms: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-      comment: 'Terms and conditions for this proforma',
-    },
+    validUntil: { type: DataTypes.DATE, allowNull: true },
+    notes: { type: DataTypes.TEXT, allowNull: true },
+    terms: { type: DataTypes.TEXT, allowNull: true },
+    createdById: { type: DataTypes.UUID, allowNull: false },
   },
   {
     sequelize,

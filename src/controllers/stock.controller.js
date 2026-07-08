@@ -112,7 +112,7 @@ const deleteItem = async (req, res, next) => {
   try {
     const item = await StockItem.findByPk(req.params.id);
     if (!item) return error(res, 'Stock item not found.', 404);
-    await item.update({ isActive: false });
+    await item.destroy();
     return success(res, null, 'Stock item deleted successfully.');
   } catch (err) {
     next(err);

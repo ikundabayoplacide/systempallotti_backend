@@ -57,6 +57,7 @@ const JobSpecDocument = require('./JobSpecDocument');
 const DepartmentSample = require('./DepartmentSample');
 const DepartmentSampleDocument = require('./DepartmentSampleDocument');
 const Withdrawal = require('./Withdrawal');
+const ProformaItem = require('./ProformaItem');
 // ProcurementLead → User (created by)
 ProcurementLead.belongsTo(User, { foreignKey: 'createdById', as: 'createdBy' });
 User.hasMany(ProcurementLead, { foreignKey: 'createdById', as: 'procurementLeads' });
@@ -173,17 +174,21 @@ Job.hasMany(JobItem, { foreignKey: 'jobId', as: 'jobItems' });
 JobItem.belongsTo(StockItem, { foreignKey: 'stockItemId', as: 'stockItem' });
 StockItem.hasMany(JobItem, { foreignKey: 'stockItemId', as: 'jobItems' });
 
-// Proforma → Job
+// Proforma → Job (optional)
 Proforma.belongsTo(Job, { foreignKey: 'jobId', as: 'job' });
 Job.hasMany(Proforma, { foreignKey: 'jobId', as: 'proformas' });
 
-// Proforma → Customer
+// Proforma → Customer (optional)
 Proforma.belongsTo(Customer, { foreignKey: 'customerId', as: 'customer' });
 Customer.hasMany(Proforma, { foreignKey: 'customerId', as: 'proformas' });
 
 // Proforma → User (created by)
 Proforma.belongsTo(User, { foreignKey: 'createdById', as: 'createdBy' });
 User.hasMany(Proforma, { foreignKey: 'createdById', as: 'proformas' });
+
+// Proforma → ProformaItem
+Proforma.hasMany(ProformaItem, { foreignKey: 'proformaId', as: 'items' });
+ProformaItem.belongsTo(Proforma, { foreignKey: 'proformaId', as: 'proforma' });
 
 // CustomerVisit → Customer
 CustomerVisit.belongsTo(Customer, { foreignKey: 'customerId', as: 'customer' });
@@ -468,4 +473,4 @@ User.hasMany(DepartmentSampleDocument, { foreignKey: 'uploadedById', as: 'sample
 Withdrawal.belongsTo(User, { foreignKey: 'recordedById', as: 'recordedBy' });
 User.hasMany(Withdrawal, { foreignKey: 'recordedById', as: 'withdrawals' });
 
-module.exports = { User, Customer, Job, Department, Notification, NotificationRead, Payment, BoutiqueCategory, BoutiqueProduct, BoutiqueStockMovement, StockItem, StockEntry, StockSortie, JobItem, Proforma, CustomerVisit, Permission, RolePermission, Role, Invoice, EmployeeJobAssignment, MaterialRequest, MaterialRequestItem, BoutiqueStockRequest, BoutiqueStockRequestItem, BoutiqueSale, Report, Hobe, HobeSale, JobDocument, ProcurementLead, ProcurementLeadDocument, RecoveryRecord, Outstand, CasualWorker, Payroll, BoutiqueStockItem, BoutiqueStockEntry, BoutiqueStockSortie, GeneralStockItem, GeneralStockEntry, GeneralStockSortie, BindingStockItem, BindingStockEntry, BindingStockSortie, Machine, MachineAssignment, JobSpec, JobSpecDocument, DepartmentSample, DepartmentSampleDocument, Withdrawal };
+module.exports = { User, Customer, Job, Department, Notification, NotificationRead, Payment, BoutiqueCategory, BoutiqueProduct, BoutiqueStockMovement, StockItem, StockEntry, StockSortie, JobItem, Proforma, ProformaItem, CustomerVisit, Permission, RolePermission, Role, Invoice, EmployeeJobAssignment, MaterialRequest, MaterialRequestItem, BoutiqueStockRequest, BoutiqueStockRequestItem, BoutiqueSale, Report, Hobe, HobeSale, JobDocument, ProcurementLead, ProcurementLeadDocument, RecoveryRecord, Outstand, CasualWorker, Payroll, BoutiqueStockItem, BoutiqueStockEntry, BoutiqueStockSortie, GeneralStockItem, GeneralStockEntry, GeneralStockSortie, BindingStockItem, BindingStockEntry, BindingStockSortie, Machine, MachineAssignment, JobSpec, JobSpecDocument, DepartmentSample, DepartmentSampleDocument, Withdrawal };

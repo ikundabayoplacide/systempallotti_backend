@@ -73,10 +73,6 @@ User.init(
       defaultValue: null,
       comment: 'The job currently assigned to this employee by a supervisor',
     },
-    deletedAt: {
-      type: DataTypes.DATE,
-      allowNull: true,
-    },
     reset_token: {
       type: DataTypes.STRING,
       allowNull: true,
@@ -91,7 +87,6 @@ User.init(
     modelName: 'User',
     tableName: 'users',
     timestamps: true,
-    paranoid: true, // enables soft delete via deletedAt
 
     hooks: {
       beforeSave: async (user) => {
