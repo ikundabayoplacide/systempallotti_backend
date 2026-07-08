@@ -333,22 +333,6 @@ const createJob = async (req, res, next) => {
       );
     }
 
-    // Auto-create a draft proforma
-    const proformaNo = await Proforma.generateProformaNo();
-    const sub = parseFloat(amount || 0);
-    await Proforma.create({
-      proformaNo,
-      jobId: job.id,
-      customerId: job.customerId,
-      createdById: req.user.id,
-      subtotal: sub,
-      taxRate: 0,
-      taxAmount: 0,
-      discount: 0,
-      totalAmount: sub,
-      status: 'draft',
-    });
-
     const created = await Job.findByPk(job.id, { include: jobIncludes });
     return success(res, created, 'Job registered successfully.', 201);
   } catch (err) {
@@ -390,25 +374,6 @@ const updateJob = async (req, res, next) => {
       ...(amount !== undefined && { amount }),
       ...(departmentAssignedToId !== undefined && { departmentAssignedToId }),
     });
-
-    // Sync job amount from items totalCost sum, then update proforma
-    const allItems = await JobItem.findAll({ where: { jobId: job.id } });
-    const itemsTotal = allItems.reduce((sum, i) => sum + (parseFloat(i.totalCost) || 0), 0);
-    const effectiveAmount = itemsTotal > 0 ? itemsTotal : (amount !== undefined ? parseFloat(amount || 0) : parseFloat(job.amount || 0));
-
-    await job.update({ amount: effectiveAmount });
-
-    const proforma = await Proforma.findOne({
-      where: { jobId: job.id, status: 'draft' },
-      order: [['createdAt', 'DESC']],
-    });
-    if (proforma) {
-      const tax = parseFloat(proforma.taxRate) || 0;
-      const disc = parseFloat(proforma.discount) || 0;
-      const taxAmt = parseFloat(((effectiveAmount * tax) / 100).toFixed(2));
-      const totalAmount = parseFloat((effectiveAmount + taxAmt - disc).toFixed(2));
-      await proforma.update({ subtotal: effectiveAmount, taxAmount: taxAmt, totalAmount });
-    }
 
     const updated = await Job.findByPk(job.id, { include: jobIncludes });
     return success(res, updated, 'Job updated successfully.');
