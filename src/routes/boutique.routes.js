@@ -30,7 +30,7 @@ router.delete('/categories/:id', authorize('ADMIN'), deleteCategory);
 router.get('/products', getAllProducts);
 router.get('/products/:id', getProductById);
 router.post('/products', authorize('ADMIN', 'STOCK','RECEPTIONIST'), createProductValidation, validate, createProduct);
-router.put('/products/:id', authorize('ADMIN', 'STOCK'), updateProductValidation, validate, updateProduct);
+router.put('/products/:id', authorize('ADMIN', 'STOCK', 'RECEPTIONIST'), updateProductValidation, validate, updateProduct);
 router.delete('/products/:id', authorize('ADMIN'), deleteProduct);
 
 router.patch('/products/:id/sale-status', authorize('ADMIN', 'STOCK', 'RECEPTIONIST'), markAsSoldValidation, validate, markAsSold);
