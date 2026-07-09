@@ -60,6 +60,7 @@ const Withdrawal = require('./Withdrawal');
 const ProformaItem = require('./ProformaItem');
 const StockRequest = require('./StockRequest');
 const StockRequestItem = require('./StockRequestItem');
+const JobDepartmentHistory = require('./JobDepartmentHistory');
 // ProcurementLead → User (created by)
 ProcurementLead.belongsTo(User, { foreignKey: 'createdById', as: 'createdBy' });
 User.hasMany(ProcurementLead, { foreignKey: 'createdById', as: 'procurementLeads' });
@@ -486,4 +487,12 @@ StockRequest.belongsTo(User, { foreignKey: 'respondedBy', as: 'responder' });
 StockRequestItem.belongsTo(StockRequest, { foreignKey: 'stockRequestId', as: 'request' });
 StockRequest.hasMany(StockRequestItem, { foreignKey: 'stockRequestId', as: 'items' });
 
-module.exports = { User, Customer, Job, Department, Notification, NotificationRead, Payment, BoutiqueCategory, BoutiqueProduct, BoutiqueStockMovement, StockItem, StockEntry, StockSortie, JobItem, Proforma, ProformaItem, CustomerVisit, Permission, RolePermission, Role, Invoice, EmployeeJobAssignment, MaterialRequest, MaterialRequestItem, BoutiqueStockRequest, BoutiqueStockRequestItem, BoutiqueSale, Report, Hobe, HobeSale, JobDocument, ProcurementLead, ProcurementLeadDocument, RecoveryRecord, Outstand, CasualWorker, Payroll, BoutiqueStockItem, BoutiqueStockEntry, BoutiqueStockSortie, GeneralStockItem, GeneralStockEntry, GeneralStockSortie, BindingStockItem, BindingStockEntry, BindingStockSortie, Machine, MachineAssignment, JobSpec, JobSpecDocument, DepartmentSample, DepartmentSampleDocument, Withdrawal, StockRequest, StockRequestItem };
+// JobDepartmentHistory → Job
+JobDepartmentHistory.belongsTo(Job, { foreignKey: 'jobId', as: 'job' });
+Job.hasMany(JobDepartmentHistory, { foreignKey: 'jobId', as: 'departmentHistory' });
+
+// JobDepartmentHistory → Department
+JobDepartmentHistory.belongsTo(Department, { foreignKey: 'departmentId', as: 'department' });
+Department.hasMany(JobDepartmentHistory, { foreignKey: 'departmentId', as: 'jobHistory' });
+
+module.exports = { User, Customer, Job, Department, Notification, NotificationRead, Payment, BoutiqueCategory, BoutiqueProduct, BoutiqueStockMovement, StockItem, StockEntry, StockSortie, JobItem, Proforma, ProformaItem, CustomerVisit, Permission, RolePermission, Role, Invoice, EmployeeJobAssignment, MaterialRequest, MaterialRequestItem, BoutiqueStockRequest, BoutiqueStockRequestItem, BoutiqueSale, Report, Hobe, HobeSale, JobDocument, ProcurementLead, ProcurementLeadDocument, RecoveryRecord, Outstand, CasualWorker, Payroll, BoutiqueStockItem, BoutiqueStockEntry, BoutiqueStockSortie, GeneralStockItem, GeneralStockEntry, GeneralStockSortie, BindingStockItem, BindingStockEntry, BindingStockSortie, Machine, MachineAssignment, JobSpec, JobSpecDocument, DepartmentSample, DepartmentSampleDocument, Withdrawal, StockRequest, StockRequestItem, JobDepartmentHistory };

@@ -26,6 +26,7 @@ const {
   getCompletedAndPaidJobs,
   deleteJob,
   verifyJob,
+  getJobDepartmentHistory,
 } = require('../controllers/job.controller');
 
 const {
@@ -101,5 +102,8 @@ router.patch('/:id/reassign', authorize('ADMIN', 'SUPERVISOR', 'SALES', 'PRODUCT
 router.patch('/:id/deliver', authorize('ADMIN', 'RECEPTIONIST', 'SUPERVISOR', 'SALES', 'PRODUCTION_MANAGER'), deliverJobValidation, validate, deliverJob);
 router.patch('/:id/complete', authorize('ADMIN', 'RECEPTIONIST', 'SUPERVISOR', 'SALES', 'PRODUCTION_MANAGER', 'HOBE'), completeJob);
 router.patch('/:id/verify', authorize('ADMIN', 'DAF'), verifyJob);
+
+// Department job history (jobs that previously passed through a department)
+router.get('/departments/:id/jobs/history', authorize('ADMIN', 'SUPERVISOR', 'PRODUCTION_MANAGER'), getJobDepartmentHistory);
 
 module.exports = router;

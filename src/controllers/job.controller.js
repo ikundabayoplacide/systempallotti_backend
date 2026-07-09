@@ -14,6 +14,7 @@ const RecoveryRecord = require('../database/models/RecoveryRecord');
 const MaterialRequest = require('../database/models/MaterialRequest');
 const Employee = require('../database/models/Employee');
 const EmployeeJobAssignment = require('../database/models/EmployeeJobAssignment');
+const JobDepartmentHistory = require('../database/models/JobDepartmentHistory');
 const { success, error, paginated } = require('../utils/apiResponse');
 const { getPagination } = require('../utils/helpers');
 const notify = require('../utils/notification.service');
@@ -491,6 +492,7 @@ const assignJob = async (req, res, next) => {
 
     const newState = departmentToState(dept.name);
     await job.update({ departmentAssignedToId, state: newState });
+    await JobDepartmentHistory.create({ jobId: job.id, departmentId: departmentAssignedToId, assignedAt: new Date() });
 
     logger.info(`[JOB ASSIGN] Job ${job.jobNumber} assigned to department "${dept.name}" → state set to "${newState ?? 'null'}" by user ${req.user.id}`);
 
@@ -546,6 +548,7 @@ const reassignJob = async (req, res, next) => {
 
     const newState = departmentToState(newDept.name);
     await job.update({ departmentAssignedToId, state: newState });
+    await JobDepartmentHistory.create({ jobId: job.id, departmentId: departmentAssignedToId, assignedAt: new Date() });
 
     logger.info(`[JOB REASSIGN] Job ${job.jobNumber} reassigned from "${previousDept?.name || 'N/A'}" to "${newDept.name}" → state set to "${newState ?? 'null'}" by user ${req.user.id}`);
 
@@ -1007,6 +1010,50 @@ const verifyJob = async (req, res, next) => {
   }
 };
 
+/**
+ * GET /api/departments/:id/jobs/history
+ * Returns jobs that previously passed through this department (no longer currently assigned here).
+ */
+const getJobDepartmentHistory = async (req, res, next) => {
+  try {
+    const { page, limit, skip } = getPagination(req.query);
+
+    const department = await Department.findByPk(req.params.id);
+    if (!department) return error(res, 'Department not found.', 404);
+
+    const historyRecords = await JobDepartmentHistory.findAll({
+      where: { departmentId: req.params.id },
+      attributes: ['jobId'],
+    });
+
+    const historicJobIds = historyRecords.map((r) => r.jobId);
+
+    if (historicJobIds.length === 0) {
+      return paginated(res, [], 0, page, limit, `No job history for department: ${department.name}`);
+    }
+
+    // Only jobs that are no longer currently assigned to this department
+    const { count, rows } = await Job.findAndCountAll({
+      where: {
+        id: historicJobIds,
+        departmentAssignedToId: { [Op.ne]: req.params.id },
+      },
+      offset: skip,
+      limit,
+      order: [['createdAt', 'DESC']],
+      include: [
+        { model: Customer, as: 'customer', attributes: ['id', 'name', 'email', 'phone', 'company'] },
+        { model: User, as: 'createdBy', attributes: ['id', 'name', 'email', 'role'] },
+        { model: Department, as: 'departmentAssignedTo', attributes: ['id', 'name'] },
+      ],
+    });
+
+    return paginated(res, rows, count, page, limit, `Job history for department: ${department.name}`);
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   getNextJobNumber,
   getJobByNumber,
@@ -1033,4 +1080,5 @@ module.exports = {
   deleteJob,
   getJobsByDepartment,
   verifyJob,
+  getJobDepartmentHistory,
 };
