@@ -491,7 +491,7 @@ const assignJob = async (req, res, next) => {
     if (!dept) return error(res, 'Department not found or inactive.', 404);
 
     const newState = departmentToState(dept.name);
-    await job.update({ departmentAssignedToId, state: newState, progress: 'pending' });
+    await job.update({ departmentAssignedToId, state: newState, inProduction: 'pending', progress: 'pending' });
     await JobDepartmentHistory.create({ jobId: job.id, departmentId: departmentAssignedToId, assignedAt: new Date() });
 
     logger.info(`[JOB ASSIGN] Job ${job.jobNumber} assigned to department "${dept.name}" → state set to "${newState ?? 'null'}" by user ${req.user.id}`);
@@ -547,7 +547,7 @@ const reassignJob = async (req, res, next) => {
     const previousDept = job.departmentAssignedTo;
 
     const newState = departmentToState(newDept.name);
-    await job.update({ departmentAssignedToId, state: newState, progress: 'pending' });
+    await job.update({ departmentAssignedToId, state: newState, inProduction: 'pending', progress: 'pending' });
     await JobDepartmentHistory.create({ jobId: job.id, departmentId: departmentAssignedToId, assignedAt: new Date() });
 
     logger.info(`[JOB REASSIGN] Job ${job.jobNumber} reassigned from "${previousDept?.name || 'N/A'}" to "${newDept.name}" → state set to "${newState ?? 'null'}" by user ${req.user.id}`);
