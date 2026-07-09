@@ -157,7 +157,7 @@ Job.init(
       defaultValue: null,
     },
     progress: {
-      type: DataTypes.ENUM('started', 'paused', 'resumed', 'completed'),
+      type: DataTypes.ENUM('pending', 'started', 'paused', 'resumed', 'completed'),
       allowNull: true,
       defaultValue: null,
       comment: 'Worker-driven progress state: started, paused, resumed, or completed',
