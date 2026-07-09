@@ -167,7 +167,7 @@ const createProduct = async (req, res, next) => {
       type: 'BOUTIQUE_PRODUCT_ADDED',
       relatedEntityType: 'boutiqueProduct',
       relatedEntityId: product.id,
-      targetRoles: ['ADMIN', 'SALESMANAGER'],
+      targetRoles: ['ADMIN', 'SALES'],
     });
 
     const created = await BoutiqueProduct.findByPk(product.id, { include: productIncludes });
@@ -216,7 +216,18 @@ const markAsSold = async (req, res, next) => {
     const product = await BoutiqueProduct.findByPk(req.params.id);
     if (!product) return error(res, 'Product not found.', 404);
 
-    const { quantity = 1, amountPaid, customerId, note, paymentMethod = 'cash' } = req.body;
+    const {
+      quantity: rawQty, qty,
+      amountPaid,
+      unitPrice: overrideUnitPrice,
+      customerId,
+      customerName, customerPhone,
+      note, notes,
+      paymentMethod = 'cash',
+    } = req.body;
+
+    // Accept qty as alias for quantity
+    const quantity = parseInt(rawQty ?? qty ?? 1, 10);
 
     if (!Number.isInteger(quantity) || quantity < 1)
       return error(res, 'quantity must be a positive integer.', 422);
@@ -224,6 +235,21 @@ const markAsSold = async (req, res, next) => {
       return error(res, 'amountPaid is required.', 422);
     if (amountPaid < 0)
       return error(res, 'amountPaid cannot be negative.', 422);
+
+    // Resolve customer: explicit ID > find-or-create by name+phone
+    let resolvedCustomerId = customerId || null;
+    if (!resolvedCustomerId && customerName && customerPhone) {
+      const [customer] = await Customer.findOrCreate({
+        where: { phone: customerPhone },
+        defaults: {
+          name: customerName,
+          phone: customerPhone,
+          type: 'RETAIL',
+          isActive: true,
+        },
+      });
+      resolvedCustomerId = customer.id;
+    }
 
     const stockBefore = product.stock;
     if (stockBefore < quantity)
@@ -243,16 +269,19 @@ const markAsSold = async (req, res, next) => {
       stockAfter,
     });
 
+    // Use overrideUnitPrice if provided, otherwise fall back to product price
+    const effectiveUnitPrice = overrideUnitPrice !== undefined ? parseFloat(overrideUnitPrice) : parseFloat(product.price);
+
     await BoutiqueSale.create({
       productId: product.id,
       soldById: req.user.id,
-      customerId: customerId || null,
+      customerId: resolvedCustomerId,
       quantity,
-      unitPrice: product.price,
+      unitPrice: effectiveUnitPrice,
       amountPaid,
-      ...calcPayment(quantity * parseFloat(product.price), amountPaid),
+      ...calcPayment(quantity * effectiveUnitPrice, amountPaid),
       paymentMethod,
-      note: note || null,
+      note: note ?? notes ?? null,
     });
 
     const updated = await BoutiqueProduct.findByPk(product.id, { include: productIncludes });

@@ -27,7 +27,7 @@ ProcurementLeadDocument.init(
       allowNull: false,
     },
     fileUrl: {
-      type: DataTypes.TEXT,
+      type: DataTypes.TEXT('long'),
       allowNull: false,
       comment: 'Base64 encoded file with data URI prefix',
     },

@@ -84,7 +84,7 @@ router.use('/:jobId/documents', jobDocumentRoutes);
 router.get('/:id/details', getJobDetails);
 router.get('/:id', getJobById);
 router.put('/:id', authorize('ADMIN', 'RECEPTIONIST', 'SALES', 'PRODUCTION_MANAGER'), updateJobValidation, validate, updateJob);
-router.delete('/:id', authorize('ADMIN', 'SALES'), deleteJob);
+router.delete('/:id', authorize('ADMIN', 'SALES', 'RECEPTIONIST'), deleteJob);
 
 // Workflow actions
 router.patch('/:id/status', authorize('ADMIN', 'RECEPTIONIST', 'SALES', 'PRINTEMPLOYEE', 'SUPERVISOR'), updateJobStatusValidation, validate, updateJobStatus);

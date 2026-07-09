@@ -41,13 +41,20 @@ const updateStockValidation = [
 ];
 
 const markAsSoldValidation = [
+  // accept both `quantity` and `qty`
   body('quantity').optional().isInt({ min: 1 }).withMessage('quantity must be a positive integer'),
+  body('qty').optional().isInt({ min: 1 }).withMessage('qty must be a positive integer'),
   body('amountPaid').notEmpty().withMessage('amountPaid is required')
     .isFloat({ min: 0 }).withMessage('amountPaid must be a non-negative number'),
+  body('unitPrice').optional().isFloat({ min: 0 }).withMessage('unitPrice must be a non-negative number'),
   body('paymentMethod').optional().isIn(['cash', 'mobile', 'card', 'bank'])
     .withMessage('paymentMethod must be one of: cash, mobile, card, bank'),
   body('customerId').optional().isUUID().withMessage('customerId must be a valid UUID'),
+  body('customerName').optional().trim(),
+  body('customerPhone').optional().trim(),
+  // accept both `note` and `notes`
   body('note').optional().trim(),
+  body('notes').optional().trim(),
 ];
 
 const updateSaleValidation = [

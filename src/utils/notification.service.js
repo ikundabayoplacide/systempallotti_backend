@@ -20,6 +20,7 @@
 const Notification = require('../database/models/Notification');
 const NotificationRead = require('../database/models/NotificationRead');
 const User = require('../database/models/User');
+const logger = require('./logger');
 
 /**
  * @param {object} opts
@@ -43,7 +44,6 @@ const notify = async ({
   targetUserIds = [],
 }) => {
   try {
-    // 1. Create the single notification record
     const notification = await Notification.create({
       createdById,
       title,
@@ -51,29 +51,25 @@ const notify = async ({
       type,
       relatedEntityType,
       relatedEntityId,
-      targetRoles,
+      targetRoles: targetRoles.length ? JSON.stringify(targetRoles) : null,
     });
 
-    // 2. Resolve recipients: all active users matching targetRoles
     const recipientsByRole = targetRoles.length
       ? await User.findAll({
           where: { role: targetRoles, isActive: true },
-          attributes: ['id'],
+          attributes: ['id', 'role'],
         })
       : [];
 
-    // 3. Merge with any explicitly provided user IDs (deduplicate)
     const roleIds = recipientsByRole.map((u) => u.id);
     const allIds = [...new Set([...roleIds, ...targetUserIds])];
 
-    // 4. Exclude the creator from receiving their own notification
     const recipientIds = createdById
       ? allIds.filter((id) => id !== createdById)
       : allIds;
 
     if (recipientIds.length === 0) return;
 
-    // 5. Fan-out: create one NotificationRead row per recipient
     await NotificationRead.bulkCreate(
       recipientIds.map((userId) => ({
         notificationId: notification.id,
@@ -84,8 +80,7 @@ const notify = async ({
       { ignoreDuplicates: true }
     );
   } catch (err) {
-    // Notifications are non-critical — log but never crash the request
-    console.error('[NotificationService] Failed:', err.message);
+    logger.error(`[NotificationService] Failed: ${err.message}`, { stack: err.stack });
   }
 };
 

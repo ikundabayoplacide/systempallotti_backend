@@ -42,6 +42,7 @@ Notification.init(
         'EMPLOYEE_CREATED',
         'JOB_DAF_ACTION',
         'HOBE_CREATED',
+        'OUTSTAND_CREATED',
         'GENERAL'
       ),
       defaultValue: 'GENERAL',
@@ -55,11 +56,10 @@ Notification.init(
       type: DataTypes.UUID,
       allowNull: true,
     },
-    // Roles this notification was broadcast to (informational)
     targetRoles: {
       type: DataTypes.TEXT,
       allowNull: true,
-      defaultValue: [],
+      defaultValue: null,
     },
   },
   {

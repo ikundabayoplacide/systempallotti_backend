@@ -271,7 +271,41 @@ const createStockController = (Item, Entry, Sortie, User, managerRoles) => {
     } catch (err) { next(err); }
   };
 
-  return { getAllItems, getItemById, createItem, updateItem, deleteItem, getAllEntries, createEntry, getAllSorties, getSortieById, getMySorties, createSortie, approveSortie, rejectSortie };
+  const updateSortie = async (req, res, next) => {
+    try {
+      const sortie = await Sortie.findByPk(req.params.id);
+      if (!sortie) return error(res, 'Sortie not found.', 404);
+      if (sortie.requesterId !== req.user.id) return error(res, 'Forbidden.', 403);
+      if (sortie.status !== 'pending') return error(res, 'Only pending sorties can be edited.', 409);
+
+      const { quantityOut, reason, notes } = req.body;
+      if (quantityOut !== undefined) {
+        const item = await Item.findByPk(sortie.stockItemId);
+        const qty = parseFloat(quantityOut);
+        if (isNaN(qty) || qty <= 0) return error(res, 'Invalid quantity.', 422);
+        if (qty > parseFloat(item.currentStock)) return error(res, `Insufficient stock. Available: ${item.currentStock}.`, 422);
+        await sortie.update({ quantityOut: qty, stockAfter: parseFloat(item.currentStock) - qty, ...(reason !== undefined && { reason }), ...(notes !== undefined && { notes }) });
+      } else {
+        await sortie.update({ ...(reason !== undefined && { reason }), ...(notes !== undefined && { notes }) });
+      }
+
+      const updated = await Sortie.findByPk(sortie.id, { include: sortieIncludes });
+      return success(res, updated, 'Sortie updated successfully.');
+    } catch (err) { next(err); }
+  };
+
+  const deleteSortie = async (req, res, next) => {
+    try {
+      const sortie = await Sortie.findByPk(req.params.id);
+      if (!sortie) return error(res, 'Sortie not found.', 404);
+      if (sortie.requesterId !== req.user.id) return error(res, 'Forbidden.', 403);
+      if (sortie.status !== 'pending') return error(res, 'Only pending sorties can be deleted.', 409);
+      await sortie.destroy();
+      return success(res, null, 'Sortie deleted successfully.');
+    } catch (err) { next(err); }
+  };
+
+  return { getAllItems, getItemById, createItem, updateItem, deleteItem, getAllEntries, createEntry, getAllSorties, getSortieById, getMySorties, createSortie, updateSortie, deleteSortie, approveSortie, rejectSortie };
 };
 
 module.exports = createStockController;

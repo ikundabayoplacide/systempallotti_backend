@@ -117,7 +117,7 @@ const createLeave = async (req, res, next) => {
       type: 'GENERAL',
       relatedEntityType: 'leave_request',
       relatedEntityId: leave.id,
-      targetRoles: ['ADMIN', 'HR', 'SUPERVISOR'],
+      targetRoles: ['ADMIN', 'SUPERVISOR'],
     });
 
     const created = await LeaveRequest.findByPk(leave.id, { include: leaveIncludes });
@@ -161,7 +161,7 @@ const reviewLeave = async (req, res, next) => {
       relatedEntityType: 'leave_request',
       relatedEntityId: leave.id,
       targetUserIds: [leave.userId],
-      targetRoles: ['ADMIN', 'HR'],
+      targetRoles: ['ADMIN'],
     });
 
     const updated = await LeaveRequest.findByPk(leave.id, { include: leaveIncludes });
@@ -179,7 +179,7 @@ const cancelLeave = async (req, res, next) => {
     if (!leave) return error(res, 'Leave request not found.', 404);
 
     const isOwner = leave.userId === req.user.id;
-    const isAdmin = ['ADMIN', 'HR'].includes(req.user.role);
+    const isAdmin = ['ADMIN'].includes(req.user.role);
 
     if (!isOwner && !isAdmin) return error(res, 'Forbidden.', 403);
     if (leave.status !== 'PENDING') return error(res, 'Only pending requests can be cancelled.', 409);

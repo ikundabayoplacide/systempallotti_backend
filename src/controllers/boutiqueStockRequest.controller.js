@@ -231,4 +231,71 @@ const rejectRequest = async (req, res, next) => {
   }
 };
 
-module.exports = { getAllRequests, getMyRequests, getRequestById, createRequest, approveRequest, rejectRequest };
+/**
+ * PUT /api/boutique-stock-requests/:id
+ * Receptionist edits their own PENDING request.
+ * Body: { notes?, items: [{ productId, quantity }] }
+ */
+const updateRequest = async (req, res, next) => {
+  try {
+    const request = await BoutiqueStockRequest.findByPk(req.params.id);
+    if (!request) return error(res, 'Request not found.', 404);
+    if (request.requestedById !== req.user.id) return error(res, 'Forbidden.', 403);
+    if (request.status !== 'pending') return error(res, 'Only pending requests can be edited.', 409);
+
+    const { notes, items } = req.body;
+
+    if (!items || items.length === 0)
+      return error(res, 'At least one product is required.', 422);
+
+    for (const item of items) {
+      if (!item.productId || !item.quantity || item.quantity <= 0)
+        return error(res, 'Each item must have a valid productId and quantity.', 422);
+    }
+
+    const productIds = items.map((i) => i.productId);
+    const products = await BoutiqueProduct.findAll({ where: { id: productIds, isActive: true } });
+    if (products.length !== productIds.length)
+      return error(res, 'One or more products not found.', 404);
+
+    await request.update({ notes: notes ?? request.notes });
+
+    await BoutiqueStockRequestItem.destroy({ where: { boutiqueStockRequestId: request.id } });
+    await Promise.all(
+      items.map((item) =>
+        BoutiqueStockRequestItem.create({
+          boutiqueStockRequestId: request.id,
+          productId: item.productId,
+          quantity: item.quantity,
+        })
+      )
+    );
+
+    const updated = await BoutiqueStockRequest.findByPk(request.id, { include: requestIncludes });
+    return success(res, updated, 'Request updated successfully.');
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * DELETE /api/boutique-stock-requests/:id
+ * Receptionist deletes their own PENDING request.
+ */
+const deleteRequest = async (req, res, next) => {
+  try {
+    const request = await BoutiqueStockRequest.findByPk(req.params.id);
+    if (!request) return error(res, 'Request not found.', 404);
+    if (request.requestedById !== req.user.id) return error(res, 'Forbidden.', 403);
+    if (request.status !== 'pending') return error(res, 'Only pending requests can be deleted.', 409);
+
+    await BoutiqueStockRequestItem.destroy({ where: { boutiqueStockRequestId: request.id } });
+    await request.destroy();
+
+    return success(res, null, 'Request deleted successfully.');
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { getAllRequests, getMyRequests, getRequestById, createRequest, updateRequest, deleteRequest, approveRequest, rejectRequest };

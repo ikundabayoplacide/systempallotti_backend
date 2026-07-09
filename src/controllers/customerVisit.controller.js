@@ -116,7 +116,7 @@ const checkIn = async (req, res, next) => {
       type: 'CUSTOMER_CHECKIN',
       relatedEntityType: 'customer',
       relatedEntityId: customer.id,
-      targetRoles: ['ADMIN', 'SALESMANAGER'],
+      targetRoles: ['ADMIN', 'SALES'],
     });
 
     const created = await CustomerVisit.findByPk(visit.id, { include: visitIncludes });

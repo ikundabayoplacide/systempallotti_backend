@@ -17,6 +17,7 @@ const EmployeeJobAssignment = require('../database/models/EmployeeJobAssignment'
 const { success, error, paginated } = require('../utils/apiResponse');
 const { getPagination } = require('../utils/helpers');
 const notify = require('../utils/notification.service');
+const logger = require('../utils/logger');
 
 // Common includes for job queries
 const jobIncludes = [
@@ -469,6 +470,7 @@ const departmentToState = (deptName) => {
   if (name.includes('binding'))     return 'in-binding';
   if (name.includes('packaging'))   return 'in-packaging';
   if (name.includes('quality'))     return 'quality-check';
+  if (name.includes('atelier') || name.includes('attelier')) return 'in-atelier';
   return null;
 };
 
@@ -487,7 +489,10 @@ const assignJob = async (req, res, next) => {
     const dept = await Department.findOne({ where: { id: departmentAssignedToId, isActive: true } });
     if (!dept) return error(res, 'Department not found or inactive.', 404);
 
-    await job.update({ departmentAssignedToId, state: departmentToState(dept.name) });
+    const newState = departmentToState(dept.name);
+    await job.update({ departmentAssignedToId, state: newState });
+
+    logger.info(`[JOB ASSIGN] Job ${job.jobNumber} assigned to department "${dept.name}" → state set to "${newState ?? 'null'}" by user ${req.user.id}`);
 
     // Notify the supervisor(s) of the target department specifically
     const deptSupervisors = await User.findAll({
@@ -539,7 +544,10 @@ const reassignJob = async (req, res, next) => {
 
     const previousDept = job.departmentAssignedTo;
 
-    await job.update({ departmentAssignedToId, state: departmentToState(newDept.name) });
+    const newState = departmentToState(newDept.name);
+    await job.update({ departmentAssignedToId, state: newState });
+
+    logger.info(`[JOB REASSIGN] Job ${job.jobNumber} reassigned from "${previousDept?.name || 'N/A'}" to "${newDept.name}" → state set to "${newState ?? 'null'}" by user ${req.user.id}`);
 
     const newDeptSupervisors = await User.findAll({
       where: { departmentId: newDept.id, role: 'SUPERVISOR', isActive: true },
@@ -947,7 +955,11 @@ const markJobDone = async (req, res, next) => {
     const job = await Job.findByPk(req.params.id);
     if (!job) return error(res, 'Job not found.', 404);
     if (job.inProduction === 'done') return error(res, 'Job is already marked as done.', 409);
-    await job.update({ inProduction: 'done', completedAt: new Date(), progress: 'completed' });
+
+    const updates = { inProduction: 'done', completedAt: new Date(), progress: 'completed' };
+    if (job.state === 'in-atelier') updates.state = 'atelier-done';
+
+    await job.update(updates);
 
     await notify({
       createdById: req.user.id,

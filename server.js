@@ -53,6 +53,8 @@ const machineAssignmentRoutes = require('./src/routes/machineAssignment.routes')
 const jobSpecRoutes = require('./src/routes/jobSpec.routes');
 const departmentSampleRoutes = require('./src/routes/departmentSample.routes');
 const withdrawalRoutes = require('./src/routes/withdrawal.routes');
+const sheetRoutes = require('./src/routes/sheet.routes');
+const stockRequestRoutes = require('./src/routes/stockRequest.routes');
 
 const app = express();
 
@@ -125,6 +127,8 @@ app.use('/api/machine-assignments', machineAssignmentRoutes);
 app.use('/api/jobs/:jobId/specs', jobSpecRoutes);
 app.use('/api/department-samples', departmentSampleRoutes);
 app.use('/api/withdrawals', withdrawalRoutes);
+app.use('/api/sheets', sheetRoutes);
+app.use('/api/stock-requests', stockRequestRoutes);
 
 // 404 handler
 app.use(notFound);

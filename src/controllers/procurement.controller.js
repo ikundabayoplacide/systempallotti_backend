@@ -165,6 +165,16 @@ const updateLead = async (req, res, next) => {
       ...(notes !== undefined && { notes }),
     });
 
+    const removeDocumentIds = req.body.removeDocumentIds
+      ? [].concat(req.body.removeDocumentIds)
+      : [];
+
+    if (removeDocumentIds.length > 0) {
+      await ProcurementLeadDocument.destroy({
+        where: { id: removeDocumentIds, procurementLeadId: lead.id },
+      });
+    }
+
     if (req.files && req.files.length > 0) {
       await Promise.all(
         req.files.map((file) =>

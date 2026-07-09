@@ -1381,7 +1381,7 @@ const options = {
         },
         delete: {
           tags: ['Jobs'],
-          summary: 'Delete a job (only pending or confirmed jobs)',
+          summary: 'Delete a job — ADMIN, SALES, RECEPTIONIST (only pending or confirmed jobs)',
           parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string', format: 'uuid' } }],
           responses: {
             200: { description: 'Job deleted successfully', content: { 'application/json': { schema: { $ref: '#/components/schemas/SuccessResponse' } } } },
@@ -2415,8 +2415,18 @@ const options = {
               'application/json': {
                 schema: {
                   type: 'object',
+                  required: ['amountPaid'],
                   properties: {
-                    quantity: { type: 'integer', minimum: 1, example: 2, description: 'Number of units sold (defaults to 1)' },
+                    quantity:      { type: 'integer', minimum: 1, example: 2, description: 'Number of units sold (defaults to 1)' },
+                    qty:           { type: 'integer', minimum: 1, example: 2, description: 'Alias for quantity' },
+                    amountPaid:    { type: 'number', minimum: 0, example: 42000, description: 'Amount the customer paid' },
+                    unitPrice:     { type: 'number', minimum: 0, example: 2000, description: 'Override unit price (defaults to product price)' },
+                    paymentMethod: { type: 'string', enum: ['cash', 'mobile', 'card', 'bank'], example: 'cash' },
+                    customerId:    { type: 'string', format: 'uuid', description: 'Existing customer UUID (optional)' },
+                    customerName:  { type: 'string', example: 'muneza', description: 'Customer name — used to find-or-create customer' },
+                    customerPhone: { type: 'string', example: '+250526162626', description: 'Customer phone — used with customerName to find-or-create' },
+                    note:          { type: 'string', example: 'cyaze', description: 'Sale note' },
+                    notes:         { type: 'string', example: 'cyaze', description: 'Alias for note' },
                   },
                 },
               },
@@ -2585,6 +2595,95 @@ const options = {
               },
             },
             404: { description: 'Job not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          },
+        },
+      },
+      // ── Sheets ────────────────────────────────────────────────────────────
+      '/api/sheets': {
+        get: {
+          tags: ['Sheets'],
+          summary: 'List all sheets (paginated)',
+          parameters: [
+            { in: 'query', name: 'page', schema: { type: 'integer', default: 1 } },
+            { in: 'query', name: 'limit', schema: { type: 'integer', default: 10 } },
+            { in: 'query', name: 'search', schema: { type: 'string' }, description: 'Search by name or description' },
+          ],
+          responses: {
+            200: { description: 'Paginated sheets', content: { 'application/json': { schema: { $ref: '#/components/schemas/PaginatedResponse' } } } },
+          },
+        },
+        post: {
+          tags: ['Sheets'],
+          summary: 'Create a sheet (ADMIN, RECEPTIONIST, SALES, STOCK, DAF)',
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  required: ['name', 'qty', 'unitPrice'],
+                  properties: {
+                    name:          { type: 'string', example: 'sheets' },
+                    description:   { type: 'string', example: 'this is done well' },
+                    qty:           { type: 'integer', minimum: 0, example: 20 },
+                    unitPrice:     { type: 'number', minimum: 0, example: 1000 },
+                    customerName:  { type: 'string', example: 'hooora' },
+                    customerPhone: { type: 'string', example: '+250782929292' },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            201: { description: 'Sheet created', content: { 'application/json': { schema: { $ref: '#/components/schemas/SuccessResponse' } } } },
+            422: { description: 'Validation error', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          },
+        },
+      },
+      '/api/sheets/{id}': {
+        get: {
+          tags: ['Sheets'],
+          summary: 'Get a sheet by ID',
+          parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string', format: 'uuid' } }],
+          responses: {
+            200: { description: 'Sheet data', content: { 'application/json': { schema: { $ref: '#/components/schemas/SuccessResponse' } } } },
+            404: { description: 'Sheet not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          },
+        },
+        put: {
+          tags: ['Sheets'],
+          summary: 'Update a sheet (ADMIN, RECEPTIONIST, SALES, STOCK, DAF)',
+          parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string', format: 'uuid' } }],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    name:          { type: 'string', example: 'sheets' },
+                    description:   { type: 'string', example: 'this is done well' },
+                    qty:           { type: 'integer', minimum: 0, example: 20 },
+                    unitPrice:     { type: 'number', minimum: 0, example: 1000 },
+                    customerName:  { type: 'string', example: 'hooora' },
+                    customerPhone: { type: 'string', example: '+250782929292' },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            200: { description: 'Sheet updated', content: { 'application/json': { schema: { $ref: '#/components/schemas/SuccessResponse' } } } },
+            404: { description: 'Sheet not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
+          },
+        },
+        delete: {
+          tags: ['Sheets'],
+          summary: 'Delete a sheet (ADMIN, DAF, RECEPTIONIST)',
+          parameters: [{ in: 'path', name: 'id', required: true, schema: { type: 'string', format: 'uuid' } }],
+          responses: {
+            200: { description: 'Sheet deleted', content: { 'application/json': { schema: { $ref: '#/components/schemas/SuccessResponse' } } } },
+            404: { description: 'Sheet not found', content: { 'application/json': { schema: { $ref: '#/components/schemas/ErrorResponse' } } } },
           },
         },
       },

@@ -10,5 +10,4 @@ module.exports = createStockController(
   GeneralStockSortie,
   User,
   ['ADMIN', 'STOCK'],   // managers
-  ['HOBE']              // requesters
 );

@@ -116,12 +116,14 @@ Job.init(
         'in-binding',
         'in-packaging',
         'quality-check',
+        'in-atelier',
         'composition-done',
         'montage-done',
         'printing-done',
         'binding-done',
         'packaging-done',
-        'qualitycheck-done'
+        'qualitycheck-done',
+        'atelier-done'
       ),
       allowNull: true,
       defaultValue: null,
@@ -233,6 +235,7 @@ Job.validStateTransitions = {
   'in-binding':      'binding-done',
   'in-packaging':    'packaging-done',
   'quality-check':   'qualitycheck-done',
+  'in-atelier':      'atelier-done',
 };
 
 Job.canTransition = (fromStatus, toStatus) => {

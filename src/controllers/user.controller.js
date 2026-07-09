@@ -123,6 +123,10 @@ const updateUser = async (req, res, next) => {
 
     await user.update(updateData);
 
+    if (departmentId !== undefined) {
+      await Employee.update({ departmentId }, { where: { userId: user.id } });
+    }
+
     return success(res, user, 'User updated successfully.');
   } catch (err) {
     next(err);

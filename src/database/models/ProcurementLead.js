@@ -60,21 +60,6 @@ ProcurementLead.init(
       type: DataTypes.TEXT,
       allowNull: true,
     },
-    documentUrl: {
-      type: DataTypes.TEXT,
-      allowNull: true,
-      comment: 'Base64-encoded document (e.g. market research file)',
-    },
-    documentName: {
-      type: DataTypes.STRING(255),
-      allowNull: true,
-      comment: 'Original file name',
-    },
-    documentMimeType: {
-      type: DataTypes.STRING(100),
-      allowNull: true,
-      comment: 'MIME type of the uploaded document',
-    },
     createdById: {
       type: DataTypes.UUID,
       allowNull: false,

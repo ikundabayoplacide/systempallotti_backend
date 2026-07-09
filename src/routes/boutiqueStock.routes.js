@@ -22,6 +22,8 @@ router.get('/sorties/my', authorize('RECEPTIONIST'), ctrl.getMySorties);
 router.get('/sorties', authorize('ADMIN', 'STOCK'), ctrl.getAllSorties);
 router.get('/sorties/:id', authorize('ADMIN', 'STOCK'), ctrl.getSortieById);
 router.post('/sorties', authorize('RECEPTIONIST'), ctrl.createSortie);
+router.put('/sorties/:id', authorize('RECEPTIONIST'), ctrl.updateSortie);
+router.delete('/sorties/:id', authorize('RECEPTIONIST'), ctrl.deleteSortie);
 router.patch('/sorties/:id/approve', authorize('ADMIN', 'STOCK'), ctrl.approveSortie);
 router.patch('/sorties/:id/reject', authorize('ADMIN', 'STOCK'), ctrl.rejectSortie);
 
