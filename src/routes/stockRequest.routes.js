@@ -17,10 +17,10 @@ const { authorize } = require('../middlewares/role.middleware');
 
 router.use(authenticate);
 
-router.get('/my', authorize('STOCK', 'ADMIN'), getMyRequests);
-router.get('/', authorize('DAF', 'ADMIN'), getAllRequests);
+router.get('/my', getMyRequests);
+router.get('/', getAllRequests);
 router.get('/:id', getRequestById);
-router.post('/', authorize('STOCK', 'ADMIN'), createRequest);
+router.post('/', createRequest);
 router.put('/:id', authorize('STOCK', 'ADMIN'), updateRequest);
 router.delete('/:id', authorize('STOCK', 'ADMIN'), deleteRequest);
 router.patch('/:id/approve', authorize('DAF', 'ADMIN'), approveRequest);
