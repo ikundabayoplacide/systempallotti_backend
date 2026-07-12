@@ -140,6 +140,7 @@ const getAllJobs = async (req, res, next) => {
       where,
       offset: skip,
       limit,
+      distinct: true,
       order: [['createdAt', 'DESC']],
       include: jobIncludes,
     });

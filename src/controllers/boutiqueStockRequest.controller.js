@@ -286,8 +286,6 @@ const deleteRequest = async (req, res, next) => {
   try {
     const request = await BoutiqueStockRequest.findByPk(req.params.id);
     if (!request) return error(res, 'Request not found.', 404);
-    if (request.requestedById !== req.user.id) return error(res, 'Forbidden.', 403);
-    if (request.status !== 'pending') return error(res, 'Only pending requests can be deleted.', 409);
 
     await BoutiqueStockRequestItem.destroy({ where: { boutiqueStockRequestId: request.id } });
     await request.destroy();

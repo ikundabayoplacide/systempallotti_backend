@@ -18,8 +18,8 @@ router.use(authenticate);
 router.get('/', getAllDepartments);
 router.get('/:id', getDepartmentById);
 router.get('/:id/jobs', getJobsByDepartment);
-router.post('/', authorize('ADMIN'), createDepartmentValidation, validate, createDepartment);
-router.put('/:id', authorize('ADMIN'), updateDepartmentValidation, validate, updateDepartment);
-router.delete('/:id', authorize('ADMIN'), deleteDepartment);
+router.post('/', authorize('ADMIN', 'DAF'), createDepartmentValidation, validate, createDepartment);
+router.put('/:id', authorize('ADMIN', 'DAF'), updateDepartmentValidation, validate, updateDepartment);
+router.delete('/:id', authorize('ADMIN', 'DAF'), deleteDepartment);
 
 module.exports = router;

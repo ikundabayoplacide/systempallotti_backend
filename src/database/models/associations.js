@@ -64,6 +64,7 @@ const JobDepartmentHistory = require('./JobDepartmentHistory');
 const ReceptionRequest = require('./ReceptionRequest');
 const ReceptionRequestItem = require('./ReceptionRequestItem');
 const ExtraWorker = require('./ExtraWorker');
+const OvertimeRequest = require('./OvertimeRequest');
 // ProcurementLead → User (created by)
 ProcurementLead.belongsTo(User, { foreignKey: 'createdById', as: 'createdBy' });
 User.hasMany(ProcurementLead, { foreignKey: 'createdById', as: 'procurementLeads' });
@@ -517,4 +518,16 @@ User.hasMany(ExtraWorker, { foreignKey: 'doneBy', as: 'extraWorkers' });
 ExtraWorker.belongsTo(User, { foreignKey: 'approvedBy', as: 'approvedByUser' });
 User.hasMany(ExtraWorker, { foreignKey: 'approvedBy', as: 'approvedExtraWorkers' });
 
-module.exports = { User, Customer, Job, Department, Notification, NotificationRead, Payment, BoutiqueCategory, BoutiqueProduct, BoutiqueStockMovement, StockItem, StockEntry, StockSortie, JobItem, Proforma, ProformaItem, CustomerVisit, Permission, RolePermission, Role, Invoice, EmployeeJobAssignment, MaterialRequest, MaterialRequestItem, BoutiqueStockRequest, BoutiqueStockRequestItem, BoutiqueSale, Report, Hobe, HobeSale, JobDocument, ProcurementLead, ProcurementLeadDocument, RecoveryRecord, Outstand, CasualWorker, Payroll, BoutiqueStockItem, BoutiqueStockEntry, BoutiqueStockSortie, GeneralStockItem, GeneralStockEntry, GeneralStockSortie, BindingStockItem, BindingStockEntry, BindingStockSortie, Machine, MachineAssignment, JobSpec, JobSpecDocument, DepartmentSample, DepartmentSampleDocument, Withdrawal, StockRequest, StockRequestItem, JobDepartmentHistory, ExtraWorker };
+// OvertimeRequest → Employee
+OvertimeRequest.belongsTo(Employee, { foreignKey: 'employeeId', as: 'employee' });
+Employee.hasMany(OvertimeRequest, { foreignKey: 'employeeId', as: 'overtimeRequests' });
+
+// OvertimeRequest → User (registered by)
+OvertimeRequest.belongsTo(User, { foreignKey: 'registeredBy', as: 'registeredByUser' });
+User.hasMany(OvertimeRequest, { foreignKey: 'registeredBy', as: 'registeredOvertimes' });
+
+// OvertimeRequest → User (approved by)
+OvertimeRequest.belongsTo(User, { foreignKey: 'approvedBy', as: 'approvedByUser' });
+User.hasMany(OvertimeRequest, { foreignKey: 'approvedBy', as: 'approvedOvertimes' });
+
+module.exports = { User, Customer, Job, Department, Notification, NotificationRead, Payment, BoutiqueCategory, BoutiqueProduct, BoutiqueStockMovement, StockItem, StockEntry, StockSortie, JobItem, Proforma, ProformaItem, CustomerVisit, Permission, RolePermission, Role, Invoice, EmployeeJobAssignment, MaterialRequest, MaterialRequestItem, BoutiqueStockRequest, BoutiqueStockRequestItem, BoutiqueSale, Report, Hobe, HobeSale, JobDocument, ProcurementLead, ProcurementLeadDocument, RecoveryRecord, Outstand, CasualWorker, Payroll, BoutiqueStockItem, BoutiqueStockEntry, BoutiqueStockSortie, GeneralStockItem, GeneralStockEntry, GeneralStockSortie, BindingStockItem, BindingStockEntry, BindingStockSortie, Machine, MachineAssignment, JobSpec, JobSpecDocument, DepartmentSample, DepartmentSampleDocument, Withdrawal, StockRequest, StockRequestItem, JobDepartmentHistory, ExtraWorker, OvertimeRequest };

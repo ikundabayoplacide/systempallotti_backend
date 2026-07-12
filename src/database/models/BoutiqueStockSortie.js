@@ -12,10 +12,12 @@ BoutiqueStockSortie.init(
     quantityOut: { type: DataTypes.DECIMAL(12, 2), allowNull: false },
     reason: { type: DataTypes.STRING(255), allowNull: true },
     notes: { type: DataTypes.TEXT, allowNull: true },
-    status: { type: DataTypes.ENUM('pending', 'approved', 'rejected'), defaultValue: 'pending', allowNull: false },
+    status: { type: DataTypes.ENUM('pending', 'approved', 'rejected', 'taken'), defaultValue: 'pending', allowNull: false },
     sortieDate: { type: DataTypes.DATE, allowNull: false, defaultValue: DataTypes.NOW },
     stockBefore: { type: DataTypes.DECIMAL(12, 2), allowNull: false, defaultValue: 0 },
     stockAfter: { type: DataTypes.DECIMAL(12, 2), allowNull: false, defaultValue: 0 },
+    takenById: { type: DataTypes.UUID, allowNull: true, field: 'taken_by_id' },
+    takenAt: { type: DataTypes.DATE, allowNull: true, field: 'taken_at' },
   },
   { sequelize, modelName: 'BoutiqueStockSortie', tableName: 'boutique_stock_sorties', timestamps: true }
 );
