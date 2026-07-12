@@ -55,6 +55,14 @@ Invoice.init(
       allowNull: false,
       defaultValue: [],
       comment: 'Snapshot of items/services billed on this invoice',
+      get() {
+        const val = this.getDataValue('lineItems');
+        if (!val) return [];
+        if (typeof val === 'string') {
+          try { return JSON.parse(val); } catch { return []; }
+        }
+        return Array.isArray(val) ? val : [];
+      },
     },
     // --- Financials ---
     subtotal: {

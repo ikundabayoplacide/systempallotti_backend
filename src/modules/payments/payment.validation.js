@@ -6,7 +6,7 @@ const createPaymentValidation = [
     .isUUID().withMessage('jobId must be a valid UUID'),
   body('amountPaid')
     .notEmpty().withMessage('amountPaid is required')
-    .isFloat({ min: 0.01 }).withMessage('amountPaid must be greater than 0'),
+    .isFloat({ min: 0 }).withMessage('amountPaid must be at least 0'),
   body('paymentMethod')
     .notEmpty().withMessage('paymentMethod is required')
     .isIn(['CASH', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CARD'])

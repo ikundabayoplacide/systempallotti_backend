@@ -110,6 +110,18 @@ const createLeave = async (req, res, next) => {
       documentUrl: documentUrl || null,
     });
 
+    let notifyRoles = ['ADMIN', 'DAF'];
+    let notifyUserIds = [];
+
+    if (req.user.role === 'WORKER' && req.user.departmentId) {
+      const deptSupervisor = await User.findOne({
+        where: { role: 'SUPERVISOR', departmentId: req.user.departmentId, isActive: true },
+        attributes: ['id'],
+      });
+      if (deptSupervisor) notifyUserIds = [deptSupervisor.id];
+      notifyRoles = ['ADMIN', 'DAF'];
+    }
+
     await notify({
       createdById: req.user.id,
       title: 'New Leave Request',
@@ -117,7 +129,8 @@ const createLeave = async (req, res, next) => {
       type: 'GENERAL',
       relatedEntityType: 'leave_request',
       relatedEntityId: leave.id,
-      targetRoles: ['ADMIN', 'SUPERVISOR'],
+      targetRoles: notifyRoles,
+      targetUserIds: notifyUserIds,
     });
 
     const created = await LeaveRequest.findByPk(leave.id, { include: leaveIncludes });
@@ -161,7 +174,7 @@ const reviewLeave = async (req, res, next) => {
       relatedEntityType: 'leave_request',
       relatedEntityId: leave.id,
       targetUserIds: [leave.userId],
-      targetRoles: ['ADMIN'],
+      targetRoles: [],
     });
 
     const updated = await LeaveRequest.findByPk(leave.id, { include: leaveIncludes });

@@ -55,6 +55,8 @@ const departmentSampleRoutes = require('./src/routes/departmentSample.routes');
 const withdrawalRoutes = require('./src/routes/withdrawal.routes');
 const sheetRoutes = require('./src/routes/sheet.routes');
 const stockRequestRoutes = require('./src/routes/stockRequest.routes');
+const receptionRequestRoutes = require('./src/routes/receptionRequest.routes');
+const extraWorkerRoutes = require('./src/routes/extraWorker.routes');
 
 const app = express();
 
@@ -129,6 +131,8 @@ app.use('/api/department-samples', departmentSampleRoutes);
 app.use('/api/withdrawals', withdrawalRoutes);
 app.use('/api/sheets', sheetRoutes);
 app.use('/api/stock-requests', stockRequestRoutes);
+app.use('/api/reception-requests', receptionRequestRoutes);
+app.use('/api/extra-workers', extraWorkerRoutes);
 
 // 404 handler
 app.use(notFound);

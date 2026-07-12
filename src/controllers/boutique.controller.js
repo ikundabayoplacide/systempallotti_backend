@@ -303,7 +303,11 @@ const getSalesAudit = async (req, res, next) => {
     if (from || to) {
       where.createdAt = {};
       if (from) where.createdAt[Op.gte] = new Date(from);
-      if (to) where.createdAt[Op.lte] = new Date(to);
+      if (to) {
+        const toDate = new Date(to);
+        toDate.setUTCHours(23, 59, 59, 999);
+        where.createdAt[Op.lte] = toDate;
+      }
     }
 
     // Receptionist sees only their own records
@@ -338,7 +342,11 @@ const getSalesSummary = async (req, res, next) => {
     if (from || to) {
       where.createdAt = {};
       if (from) where.createdAt[Op.gte] = new Date(from);
-      if (to) where.createdAt[Op.lte] = new Date(to);
+      if (to) {
+        const toDate = new Date(to);
+        toDate.setUTCHours(23, 59, 59, 999);
+        where.createdAt[Op.lte] = toDate;
+      }
     }
 
     const [totals] = await BoutiqueSale.findAll({
@@ -391,17 +399,55 @@ const updateSale = async (req, res, next) => {
     const sale = await BoutiqueSale.findByPk(req.params.id);
     if (!sale) return error(res, 'Sale not found.', 404);
 
-    const { amountPaid, paymentMethod, note } = req.body;
+    if (req.user.role === 'RECEPTIONIST' && sale.soldById !== req.user.id)
+      return error(res, 'You can only edit your own sales.', 403);
 
-    const paymentFields = amountPaid !== undefined
-      ? calcPayment(sale.totalPrice, amountPaid)
-      : {};
+    const { quantity, amountPaid, paymentMethod, note } = req.body;
+
+    const effectiveUnitPrice = parseFloat(sale.unitPrice);
+    const newQty = quantity !== undefined ? parseInt(quantity, 10) : sale.quantity;
+
+    if (quantity !== undefined) {
+      if (!Number.isInteger(newQty) || newQty < 1)
+        return error(res, 'quantity must be a positive integer.', 422);
+
+      const qtyDiff = newQty - sale.quantity;
+
+      if (qtyDiff !== 0) {
+        const product = await BoutiqueProduct.findByPk(sale.productId);
+        if (!product) return error(res, 'Associated product not found.', 404);
+
+        const stockBefore = product.stock;
+        const stockAfter = stockBefore - qtyDiff;
+
+        if (stockAfter < 0)
+          return error(res, `Insufficient stock. Available: ${stockBefore}, need ${qtyDiff} more.`, 422);
+
+        await product.update({
+          stock: stockAfter,
+          saleStatus: stockAfter === 0 ? 'sold' : 'pending',
+        });
+
+        await BoutiqueStockMovement.create({
+          productId: product.id,
+          changedById: req.user.id,
+          change: -qtyDiff,
+          reason: 'sale edited',
+          stockBefore,
+          stockAfter,
+        });
+      }
+    }
+
+    const newTotalPrice = newQty * effectiveUnitPrice;
+    const effectiveAmountPaid = amountPaid !== undefined ? parseFloat(amountPaid) : parseFloat(sale.amountPaid);
 
     await sale.update({
-      ...(amountPaid !== undefined && { amountPaid }),
+      quantity: newQty,
+      ...(amountPaid !== undefined && { amountPaid: effectiveAmountPaid }),
       ...(paymentMethod !== undefined && { paymentMethod }),
       ...(note !== undefined && { note }),
-      ...paymentFields,
+      ...calcPayment(newTotalPrice, effectiveAmountPaid),
     });
 
     return success(res, sale, 'Sale updated successfully.');
@@ -415,14 +461,19 @@ const deleteSale = async (req, res, next) => {
     const sale = await BoutiqueSale.findByPk(req.params.id);
     if (!sale) return error(res, 'Sale not found.', 404);
 
+    if (req.user.role === 'RECEPTIONIST' && sale.soldById !== req.user.id)
+      return error(res, 'You can only delete your own sales.', 403);
+
     const product = await BoutiqueProduct.findByPk(sale.productId);
     if (!product) return error(res, 'Associated product not found.', 404);
 
     const stockBefore = product.stock;
     const stockAfter = stockBefore + sale.quantity;
-    const saleStatus = 'pending';
 
-    await product.update({ stock: stockAfter, saleStatus });
+    await product.update({
+      stock: stockAfter,
+      saleStatus: stockAfter === 0 ? 'sold' : 'pending',
+    });
 
     await BoutiqueStockMovement.create({
       productId: product.id,

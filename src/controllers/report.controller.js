@@ -102,8 +102,8 @@ const getAllReports = async (req, res, next) => {
     const { page, limit, skip } = getPagination(req.query);
     const userRole = req.user.role;
 
-    // Admin can see all reports
-    const whereCondition = userRole === 'ADMIN'
+    // Admin and DAF can see all reports
+    const whereCondition = ['ADMIN', 'DAF'].includes(userRole)
       ? {}
       : {
           [Op.or]: [
@@ -143,7 +143,7 @@ const getReportById = async (req, res, next) => {
     
     // Build where condition to check visibility
     const whereCondition = { id: req.params.id };
-    if (userRole !== 'ADMIN') {
+    if (!['ADMIN', 'DAF'].includes(userRole)) {
       whereCondition[Op.or] = [
         { createdById: req.user.id },
         { supervisorId: req.user.id },

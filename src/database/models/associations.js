@@ -61,6 +61,9 @@ const ProformaItem = require('./ProformaItem');
 const StockRequest = require('./StockRequest');
 const StockRequestItem = require('./StockRequestItem');
 const JobDepartmentHistory = require('./JobDepartmentHistory');
+const ReceptionRequest = require('./ReceptionRequest');
+const ReceptionRequestItem = require('./ReceptionRequestItem');
+const ExtraWorker = require('./ExtraWorker');
 // ProcurementLead → User (created by)
 ProcurementLead.belongsTo(User, { foreignKey: 'createdById', as: 'createdBy' });
 User.hasMany(ProcurementLead, { foreignKey: 'createdById', as: 'procurementLeads' });
@@ -495,4 +498,19 @@ Job.hasMany(JobDepartmentHistory, { foreignKey: 'jobId', as: 'departmentHistory'
 JobDepartmentHistory.belongsTo(Department, { foreignKey: 'departmentId', as: 'department' });
 Department.hasMany(JobDepartmentHistory, { foreignKey: 'departmentId', as: 'jobHistory' });
 
-module.exports = { User, Customer, Job, Department, Notification, NotificationRead, Payment, BoutiqueCategory, BoutiqueProduct, BoutiqueStockMovement, StockItem, StockEntry, StockSortie, JobItem, Proforma, ProformaItem, CustomerVisit, Permission, RolePermission, Role, Invoice, EmployeeJobAssignment, MaterialRequest, MaterialRequestItem, BoutiqueStockRequest, BoutiqueStockRequestItem, BoutiqueSale, Report, Hobe, HobeSale, JobDocument, ProcurementLead, ProcurementLeadDocument, RecoveryRecord, Outstand, CasualWorker, Payroll, BoutiqueStockItem, BoutiqueStockEntry, BoutiqueStockSortie, GeneralStockItem, GeneralStockEntry, GeneralStockSortie, BindingStockItem, BindingStockEntry, BindingStockSortie, Machine, MachineAssignment, JobSpec, JobSpecDocument, DepartmentSample, DepartmentSampleDocument, Withdrawal, StockRequest, StockRequestItem, JobDepartmentHistory };
+// ReceptionRequest → User (requestedBy)
+ReceptionRequest.belongsTo(User, { foreignKey: 'requestedById', as: 'requestedBy' });
+User.hasMany(ReceptionRequest, { foreignKey: 'requestedById', as: 'receptionRequests' });
+
+// ReceptionRequest → User (respondedBy)
+ReceptionRequest.belongsTo(User, { foreignKey: 'respondedBy', as: 'responder' });
+
+// ReceptionRequestItem → ReceptionRequest
+ReceptionRequestItem.belongsTo(ReceptionRequest, { foreignKey: 'receptionRequestId', as: 'request' });
+ReceptionRequest.hasMany(ReceptionRequestItem, { foreignKey: 'receptionRequestId', as: 'items' });
+
+// ExtraWorker → User (recorded by)
+ExtraWorker.belongsTo(User, { foreignKey: 'doneBy', as: 'recorder' });
+User.hasMany(ExtraWorker, { foreignKey: 'doneBy', as: 'extraWorkers' });
+
+module.exports = { User, Customer, Job, Department, Notification, NotificationRead, Payment, BoutiqueCategory, BoutiqueProduct, BoutiqueStockMovement, StockItem, StockEntry, StockSortie, JobItem, Proforma, ProformaItem, CustomerVisit, Permission, RolePermission, Role, Invoice, EmployeeJobAssignment, MaterialRequest, MaterialRequestItem, BoutiqueStockRequest, BoutiqueStockRequestItem, BoutiqueSale, Report, Hobe, HobeSale, JobDocument, ProcurementLead, ProcurementLeadDocument, RecoveryRecord, Outstand, CasualWorker, Payroll, BoutiqueStockItem, BoutiqueStockEntry, BoutiqueStockSortie, GeneralStockItem, GeneralStockEntry, GeneralStockSortie, BindingStockItem, BindingStockEntry, BindingStockSortie, Machine, MachineAssignment, JobSpec, JobSpecDocument, DepartmentSample, DepartmentSampleDocument, Withdrawal, StockRequest, StockRequestItem, JobDepartmentHistory, ExtraWorker };

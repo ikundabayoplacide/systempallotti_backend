@@ -22,6 +22,14 @@ Report.init(
       type: DataTypes.JSON,
       allowNull: false,
       defaultValue: [],
+      get() {
+        const val = this.getDataValue('items');
+        if (!val) return [];
+        if (typeof val === 'string') {
+          try { return JSON.parse(val); } catch { return []; }
+        }
+        return Array.isArray(val) ? val : [];
+      },
     },
     notes: {
       type: DataTypes.TEXT,
@@ -42,6 +50,15 @@ Report.init(
       allowNull: true,
       field: 'visible_to',
       defaultValue: null,
+      get() {
+        let val = this.getDataValue('visibleTo');
+        if (!val) return null;
+        // parse until we get an actual array (handles double-encoded strings)
+        while (typeof val === 'string') {
+          try { val = JSON.parse(val); } catch { return null; }
+        }
+        return Array.isArray(val) ? val : null;
+      },
     },
     supervisorId: {
       type: DataTypes.UUID,

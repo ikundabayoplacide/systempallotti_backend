@@ -58,6 +58,7 @@ const markAsSoldValidation = [
 ];
 
 const updateSaleValidation = [
+  body('quantity').optional().isInt({ min: 1 }).withMessage('quantity must be a positive integer'),
   body('amountPaid').optional().isFloat({ min: 0 }).withMessage('amountPaid must be a non-negative number'),
   body('paymentMethod').optional().isIn(['cash', 'mobile', 'card', 'bank'])
     .withMessage('paymentMethod must be one of: cash, mobile, card, bank'),

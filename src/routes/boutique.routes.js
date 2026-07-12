@@ -42,6 +42,6 @@ router.get('/products/:id/stock-movements', getStockMovements);
 router.get('/sales', authorize('ADMIN', 'STOCK', 'RECEPTIONIST', 'ACCOUNTANT'), getSalesAudit);
 router.get('/sales/summary', authorize('ADMIN', 'ACCOUNTANT'), getSalesSummary);
 router.put('/sales/:id', authorize('ADMIN', 'RECEPTIONIST'), updateSaleValidation, validate, updateSale);
-router.delete('/sales/:id', authorize('ADMIN'), deleteSale);
+router.delete('/sales/:id', authorize('ADMIN', 'RECEPTIONIST'), deleteSale);
 
 module.exports = router;
