@@ -20,4 +20,9 @@ const updateExtraWorkerValidation = [
   body('description').optional().trim(),
 ];
 
-module.exports = { createExtraWorkerValidation, updateExtraWorkerValidation };
+const approvalValidation = [
+  body('status').isIn(['APPROVED', 'REJECTED']).withMessage('Status must be APPROVED or REJECTED'),
+  body('approvalComment').optional().trim(),
+];
+
+module.exports = { createExtraWorkerValidation, updateExtraWorkerValidation, approvalValidation };

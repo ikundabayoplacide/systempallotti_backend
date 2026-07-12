@@ -4,6 +4,11 @@ const User = require('../database/models/User');
 const { success, error, paginated } = require('../utils/apiResponse');
 const { getPagination } = require('../utils/helpers');
 
+const include = [
+  { model: User, as: 'doneByUser', attributes: ['id', 'name'] },
+  { model: User, as: 'approvedByUser', attributes: ['id', 'name'] },
+];
+
 const getAllExtraWorkers = async (req, res, next) => {
   try {
     const { page, limit, skip } = getPagination(req.query);
@@ -20,7 +25,7 @@ const getAllExtraWorkers = async (req, res, next) => {
 
     const { count, rows } = await ExtraWorker.findAndCountAll({
       where,
-      include: [{ model: User, as: 'recorder', attributes: ['id', 'name', 'email'] }],
+      include,
       offset: skip,
       limit,
       order: [['date', 'DESC'], ['startTime', 'ASC']],
@@ -34,9 +39,7 @@ const getAllExtraWorkers = async (req, res, next) => {
 
 const getExtraWorkerById = async (req, res, next) => {
   try {
-    const worker = await ExtraWorker.findByPk(req.params.id, {
-      include: [{ model: User, as: 'recorder', attributes: ['id', 'name', 'email'] }],
-    });
+    const worker = await ExtraWorker.findByPk(req.params.id, { include });
     if (!worker) return error(res, 'Extra worker record not found.', 404);
     return success(res, worker);
   } catch (err) {
@@ -100,4 +103,23 @@ const deleteExtraWorker = async (req, res, next) => {
   }
 };
 
-module.exports = { getAllExtraWorkers, getExtraWorkerById, createExtraWorker, updateExtraWorker, deleteExtraWorker };
+const approveOrReject = async (req, res, next) => {
+  try {
+    const worker = await ExtraWorker.findByPk(req.params.id);
+    if (!worker) return error(res, 'Extra worker record not found.', 404);
+
+    const { status, approvalComment } = req.body;
+
+    await worker.update({
+      status,
+      approvalComment: approvalComment || null,
+      approvedBy: req.user.id,
+    });
+
+    return success(res, worker, `Extra worker record ${status.toLowerCase()} successfully.`);
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { getAllExtraWorkers, getExtraWorkerById, createExtraWorker, updateExtraWorker, deleteExtraWorker, approveOrReject };

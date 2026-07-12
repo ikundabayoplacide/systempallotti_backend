@@ -44,6 +44,19 @@ ExtraWorker.init(
       type: DataTypes.UUID,
       allowNull: false,
     },
+    status: {
+      type: DataTypes.ENUM('PENDING', 'APPROVED', 'REJECTED'),
+      allowNull: false,
+      defaultValue: 'PENDING',
+    },
+    approvalComment: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    approvedBy: {
+      type: DataTypes.UUID,
+      allowNull: true,
+    },
   },
   {
     sequelize,
