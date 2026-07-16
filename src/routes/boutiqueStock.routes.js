@@ -6,12 +6,20 @@ const { authorize } = require('../middlewares/role.middleware');
 
 router.use(authenticate);
 
-// Items — managed by STOCK/ADMIN
+// Items
 router.get('/items', authorize('ADMIN', 'STOCK', 'DAF', 'RECEPTIONIST'), ctrl.getAllItems);
 router.get('/items/:id', authorize('ADMIN', 'STOCK', 'DAF', 'RECEPTIONIST'), ctrl.getItemById);
 router.post('/items', authorize('ADMIN', 'STOCK'), ctrl.createItem);
 router.put('/items/:id', authorize('ADMIN', 'STOCK'), ctrl.updateItem);
 router.delete('/items/:id', authorize('ADMIN', 'STOCK'), ctrl.deleteItem);
+
+// Sell
+router.patch('/items/:id/sell', authorize('ADMIN', 'STOCK'), ctrl.sellStockItem);
+
+// Sales history
+router.get('/sales', authorize('ADMIN', 'STOCK', 'DAF', 'ACCOUNTANT'), ctrl.getStockItemSales);
+router.put('/sales/:id', authorize('ADMIN', 'STOCK'), ctrl.updateStockItemSale);
+router.delete('/sales/:id', authorize('ADMIN', 'STOCK'), ctrl.deleteStockItemSale);
 
 // Entries (IN)
 router.get('/entries', authorize('ADMIN', 'STOCK', 'DAF', 'RECEPTIONIST'), ctrl.getAllEntries);

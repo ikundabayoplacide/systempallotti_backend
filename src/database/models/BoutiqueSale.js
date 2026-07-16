@@ -12,7 +12,11 @@ BoutiqueSale.init(
     },
     productId: {
       type: DataTypes.UUID,
-      allowNull: false,
+      allowNull: true,
+    },
+    stockItemId: {
+      type: DataTypes.UUID,
+      allowNull: true,
     },
     soldById: {
       type: DataTypes.UUID,

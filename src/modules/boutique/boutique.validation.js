@@ -46,7 +46,8 @@ const markAsSoldValidation = [
   body('qty').optional().isInt({ min: 1 }).withMessage('qty must be a positive integer'),
   body('amountPaid').notEmpty().withMessage('amountPaid is required')
     .isFloat({ min: 0 }).withMessage('amountPaid must be a non-negative number'),
-  body('unitPrice').optional().isFloat({ min: 0 }).withMessage('unitPrice must be a non-negative number'),
+  body('unitPrice').notEmpty().withMessage('unitPrice is required')
+    .isFloat({ min: 0 }).withMessage('unitPrice must be a non-negative number'),
   body('paymentMethod').optional().isIn(['cash', 'mobile', 'card', 'bank', 'oncredit'])
     .withMessage('paymentMethod must be one of: cash, mobile, card, bank, oncredit'),
   body('customerName').optional().trim(),

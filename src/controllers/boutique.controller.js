@@ -222,7 +222,7 @@ const markAsSold = async (req, res, next) => {
     const {
       quantity: rawQty, qty,
       amountPaid,
-      unitPrice: overrideUnitPrice,
+      unitPrice,
       customerId,
       customerName, customerPhone,
       note, notes,
@@ -238,6 +238,8 @@ const markAsSold = async (req, res, next) => {
       return error(res, 'amountPaid is required.', 422);
     if (amountPaid < 0)
       return error(res, 'amountPaid cannot be negative.', 422);
+
+    const effectiveUnitPrice = parseFloat(unitPrice);
 
     // Resolve customer: explicit ID > find-or-create by name+phone
     let resolvedCustomerId = customerId || null;
@@ -271,9 +273,6 @@ const markAsSold = async (req, res, next) => {
       stockBefore,
       stockAfter,
     });
-
-    // Use overrideUnitPrice if provided, otherwise fall back to product price
-    const effectiveUnitPrice = overrideUnitPrice !== undefined ? parseFloat(overrideUnitPrice) : parseFloat(product.price);
 
     await BoutiqueSale.create({
       productId: product.id,

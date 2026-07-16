@@ -281,6 +281,10 @@ BoutiqueProduct.hasMany(BoutiqueStockRequestItem, { foreignKey: 'productId', as:
 BoutiqueSale.belongsTo(BoutiqueProduct, { foreignKey: 'productId', as: 'product' });
 BoutiqueProduct.hasMany(BoutiqueSale, { foreignKey: 'productId', as: 'sales' });
 
+// BoutiqueSale → BoutiqueStockItem
+BoutiqueSale.belongsTo(BoutiqueStockItem, { foreignKey: 'stockItemId', as: 'stockItem' });
+BoutiqueStockItem.hasMany(BoutiqueSale, { foreignKey: 'stockItemId', as: 'sales' });
+
 // BoutiqueSale → User (sold by)
 BoutiqueSale.belongsTo(User, { foreignKey: 'soldById', as: 'soldBy' });
 User.hasMany(BoutiqueSale, { foreignKey: 'soldById', as: 'boutiqueSales' });
