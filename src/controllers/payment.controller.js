@@ -10,7 +10,7 @@ const { adjustBalance } = require('../utils/fundBalance');
 
 const paymentIncludes = [
   {
-    model: Job, as: 'job', attributes: ['id', 'jobNumber', 'title', 'amount', 'paymentStatus'],
+    model: Job, as: 'job', attributes: ['id', 'jobNumber', 'title', 'amount', 'paymentStatus', 'status'],
     include: [{ model: Customer, as: 'customer', attributes: ['id', 'name', 'phone'] }],
   },
   { model: User, as: 'recordedBy', attributes: ['id', 'name'] },
@@ -29,11 +29,16 @@ const createPayment = async (req, res, next) => {
     const job = await Job.findByPk(jobId);
     if (!job) return error(res, 'Job not found.', 404);
 
+    const isOnCredit = paymentState === 'ONCREDIT';
+
     // Validate receivedById is a RECEPTIONIST or ADMIN
-    const receiver = await User.findOne({ where: { id: receivedById, isActive: true } });
-    if (!receiver) return error(res, 'Received by user not found.', 404);
-    if (!['RECEPTIONIST', 'ADMIN', 'ACCOUNTANT', 'HOBE'].includes(receiver.role)) {
-      return error(res, 'receivedById must be a RECEPTIONIST, ACCOUNTANT, HOBE, or ADMIN.', 400);
+    if (!isOnCredit) {
+      if (!receivedById) return error(res, 'receivedById is required.', 400);
+      const receiver = await User.findOne({ where: { id: receivedById, isActive: true } });
+      if (!receiver) return error(res, 'Received by user not found.', 404);
+      if (!['RECEPTIONIST', 'ADMIN', 'ACCOUNTANT', 'HOBE'].includes(receiver.role)) {
+        return error(res, 'receivedById must be a RECEPTIONIST, ACCOUNTANT, HOBE, or ADMIN.', 400);
+      }
     }
 
     // Validate verifiedById is an ACCOUNTANT or ADMIN if provided
@@ -46,10 +51,10 @@ const createPayment = async (req, res, next) => {
     }
 
     const jobAmount = parseFloat(job.amount || 0);
-    const paid = parseFloat(amountPaid);
+    const paid = isOnCredit ? 0 : parseFloat(amountPaid);
     const balance = Math.max(0, jobAmount - paid);
 
-    const receiptNo = await Payment.generateReceiptNo();
+    const receiptNo = isOnCredit ? null : await Payment.generateReceiptNo();
 
     // Update the pending (no receiptNo) record if one exists, otherwise create
     const existing = await Payment.findOne({ where: { jobId, receiptNo: null } });
@@ -84,17 +89,18 @@ const createPayment = async (req, res, next) => {
       });
     }
 
-    // Update job paymentStatus to 'paid'
-    await job.update({ paymentStatus: 'paid' });
+    // Update job paymentStatus
+    const newPaymentStatus = isOnCredit ? 'oncredit' : paymentState === 'PARTIAL' ? 'partial' : 'paid';
+    await job.update({ paymentStatus: newPaymentStatus });
 
-    // Payment received → add to balance
-    await adjustBalance('add', paid);
+    // Payment received → add to balance (skip for ONCREDIT state)
+    if (!isOnCredit) await adjustBalance('add', paid);
 
     // Notify ADMIN and DAF users
     await notify({
       createdById: req.user.id,
-      title: 'Payment Collected',
-      message: `Payment of ${paid} recorded for job ${job.jobNumber} (${paymentState}). Balance: ${balance}. Receipt: ${receiptNo}.`,
+      title: isOnCredit ? 'Payment On Credit' : 'Payment Collected',
+      message: `Payment of ${paid} recorded for job ${job.jobNumber} (${paymentState}). Balance: ${balance}.${receiptNo ? ` Receipt: ${receiptNo}.` : ''}`,
       type: 'PAYMENT_COLLECTED',
       relatedEntityType: 'payment',
       relatedEntityId: payment.id,

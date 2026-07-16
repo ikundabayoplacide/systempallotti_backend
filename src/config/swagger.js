@@ -240,7 +240,7 @@ const options = {
             paidAt: { type: 'string', format: 'date-time', nullable: true },
             status: {
               type: 'string',
-              enum: ['pending', 'confirmed', 'rejected', 'ready-for-delivery', 'delivered', 'completed'],
+              enum: ['pending', 'confirmed', 'rejected', 'delivered', 'completed'],
               example: 'pending',
             },
             priority: { type: 'string', enum: ['low', 'normal', 'high', 'urgent'], example: 'normal' },
@@ -321,7 +321,7 @@ const options = {
           properties: {
             status: {
               type: 'string',
-              enum: ['confirmed', 'rejected', 'ready-for-delivery', 'delivered', 'completed'],
+              enum: ['confirmed', 'rejected', 'delivered', 'completed'],
               example: 'confirmed',
             },
           },
@@ -1271,7 +1271,7 @@ const options = {
             { in: 'path', name: 'id', required: true, schema: { type: 'string', format: 'uuid' }, description: 'Department ID' },
             { in: 'query', name: 'page', schema: { type: 'integer', default: 1 } },
             { in: 'query', name: 'limit', schema: { type: 'integer', default: 10 } },
-            { in: 'query', name: 'status', schema: { type: 'string', enum: ['pending','confirmed','rejected','ready-for-delivery','delivered','completed'] } },
+            { in: 'query', name: 'status', schema: { type: 'string', enum: ['pending','confirmed','rejected','delivered','completed'] } },
             { in: 'query', name: 'priority', schema: { type: 'string', enum: ['low','normal','high','urgent'] } },
             { in: 'query', name: 'search', schema: { type: 'string' }, description: 'Search by job number or title' },
           ],
@@ -1328,7 +1328,7 @@ const options = {
             { in: 'query', name: 'page', schema: { type: 'integer', default: 1 } },
             { in: 'query', name: 'limit', schema: { type: 'integer', default: 10 } },
             { in: 'query', name: 'search', schema: { type: 'string' }, description: 'Search by job number or title' },
-            { in: 'query', name: 'status', schema: { type: 'string', enum: ['pending','confirmed','rejected','ready-for-delivery','delivered','completed'] } },
+            { in: 'query', name: 'status', schema: { type: 'string', enum: ['pending','confirmed','rejected','delivered','completed'] } },
             { in: 'query', name: 'priority', schema: { type: 'string', enum: ['low','normal','high','urgent'] } },
             { in: 'query', name: 'customerId', schema: { type: 'string', format: 'uuid' } },
             { in: 'query', name: 'assignedToId', schema: { type: 'string', format: 'uuid' } },

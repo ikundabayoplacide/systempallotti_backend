@@ -17,9 +17,12 @@ const productIncludes = [
 ];
 
 const calcPayment = (totalPrice, amountPaid) => {
-  const diff = parseFloat(amountPaid) - parseFloat(totalPrice);
+  const paid = parseFloat(amountPaid);
+  const total = parseFloat(totalPrice);
+  if (paid === 0) return { totalPrice: total, balanceDue: total, changeGiven: 0, paymentStatus: 'oncredit' };
+  const diff = paid - total;
   return {
-    totalPrice: parseFloat(totalPrice),
+    totalPrice: total,
     balanceDue: diff < 0 ? Math.abs(diff) : 0,
     changeGiven: diff > 0 ? diff : 0,
     paymentStatus: diff < 0 ? 'partial' : diff > 0 ? 'overpaid' : 'paid',

@@ -4,7 +4,6 @@ const JOB_STATUSES = [
   'pending',
   'confirmed',
   'rejected',
-  'ready-for-delivery',
   'partial-delivered',
   'delivered',
   'completed',

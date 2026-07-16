@@ -68,11 +68,11 @@ Payment.init(
       comment: 'Remaining balance after this payment',
     },
     paymentMethod: {
-      type: DataTypes.ENUM('CASH', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CARD'),
+      type: DataTypes.ENUM('CASH', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CARD', 'ONCREDIT'),
       allowNull: true,
     },
     paymentState: {
-      type: DataTypes.ENUM('FULL', 'PARTIAL'),
+      type: DataTypes.ENUM('FULL', 'PARTIAL', 'ONCREDIT'),
       allowNull: true,
     },
     paymentNote: {

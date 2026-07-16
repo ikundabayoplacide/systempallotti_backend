@@ -55,12 +55,12 @@ BoutiqueSale.init(
       comment: 'Amount to give back to customer',
     },
     paymentStatus: {
-      type: DataTypes.ENUM('paid', 'partial', 'overpaid'),
+      type: DataTypes.ENUM('paid', 'partial', 'overpaid', 'oncredit'),
       allowNull: false,
       defaultValue: 'paid',
     },
     paymentMethod: {
-      type: DataTypes.ENUM('cash', 'mobile', 'card', 'bank'),
+      type: DataTypes.ENUM('cash', 'mobile', 'card', 'bank', 'oncredit'),
       allowNull: false,
       defaultValue: 'cash',
     },

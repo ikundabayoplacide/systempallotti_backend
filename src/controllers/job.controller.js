@@ -41,7 +41,7 @@ const getJobStats = async (req, res, next) => {
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
     const todayEnd   = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 
-    const inProgressStatuses = ['confirmed','in-composition','in-montage','in-printing','in-binding','in-packaging','quality-check','ready-for-delivery'];
+    const inProgressStatuses = ['confirmed','in-composition','in-montage','in-printing','in-binding','in-packaging','quality-check'];
     const inProgressList = inProgressStatuses.map(s => `'${s}'`).join(',');
 
     const [[totals]] = await sequelize.query(`
@@ -676,8 +676,8 @@ const deliverJob = async (req, res, next) => {
       return error(res, 'Job is already fully delivered.', 409);
     }
 
-    if (!['completed', 'partial-delivered'].includes(job.status)) {
-      return error(res, `Job cannot be delivered from status '${job.status}'. It must be 'completed' or 'partial-delivered' first.`, 422);
+    if (!['confirmed', 'completed', 'partial-delivered'].includes(job.status)) {
+      return error(res, `Job cannot be delivered from status '${job.status}'. It must be 'confirmed', 'completed' or 'partial-delivered' first.`, 422);
     }
 
     const { quantityDelivered, deliveredByName, deliveredByContact } = req.body;

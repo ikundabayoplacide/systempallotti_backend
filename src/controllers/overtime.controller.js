@@ -1,4 +1,3 @@
-const { Op } = require('sequelize');
 const OvertimeRequest = require('../database/models/OvertimeRequest');
 const Employee = require('../database/models/Employee');
 const User = require('../database/models/User');

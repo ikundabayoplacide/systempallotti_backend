@@ -82,7 +82,6 @@ Job.init(
         'pending',
         'confirmed',
         'rejected',
-        'ready-for-delivery',
         'partial-delivered',
         'delivered',
         'completed',
@@ -175,7 +174,7 @@ Job.init(
       },
     },
     paymentStatus: {
-      type: DataTypes.ENUM('unpaid', 'paid'),
+      type: DataTypes.ENUM('unpaid', 'oncredit', 'partial', 'paid'),
       defaultValue: 'unpaid',
       allowNull: false,
     },
@@ -219,8 +218,7 @@ Job.init(
 // Valid status transitions
 Job.validTransitions = {
   pending: ['confirmed', 'rejected'],
-  confirmed: ['ready-for-delivery', 'rejected'],
-  'ready-for-delivery': ['delivered'],
+  confirmed: ['delivered', 'rejected'],
   'partial-delivered': ['delivered'],
   delivered: ['completed'],
   completed: [],

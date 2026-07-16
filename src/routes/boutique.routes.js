@@ -39,8 +39,8 @@ router.patch('/products/:id/stock', authorize('ADMIN', 'STOCK', 'RECEPTIONIST'),
 router.get('/products/:id/stock-movements', getStockMovements);
 
 // ── Sales Audit ───────────────────────────────────────────────────────────────
-router.get('/sales', authorize('ADMIN', 'STOCK', 'RECEPTIONIST', 'ACCOUNTANT'), getSalesAudit);
-router.get('/sales/summary', authorize('ADMIN', 'ACCOUNTANT'), getSalesSummary);
+router.get('/sales', authorize('ADMIN', 'STOCK', 'RECEPTIONIST', 'ACCOUNTANT', 'CASHIER'), getSalesAudit);
+router.get('/sales/summary', authorize('ADMIN', 'ACCOUNTANT', 'CASHIER'), getSalesSummary);
 router.put('/sales/:id', authorize('ADMIN', 'RECEPTIONIST'), updateSaleValidation, validate, updateSale);
 router.delete('/sales/:id', authorize('ADMIN', 'RECEPTIONIST'), deleteSale);
 

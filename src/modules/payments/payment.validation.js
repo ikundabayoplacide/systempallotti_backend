@@ -5,18 +5,18 @@ const createPaymentValidation = [
     .notEmpty().withMessage('jobId is required')
     .isUUID().withMessage('jobId must be a valid UUID'),
   body('amountPaid')
-    .notEmpty().withMessage('amountPaid is required')
+    .optional({ nullable: true })
     .isFloat({ min: 0 }).withMessage('amountPaid must be at least 0'),
   body('paymentMethod')
     .notEmpty().withMessage('paymentMethod is required')
-    .isIn(['CASH', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CARD'])
-    .withMessage('paymentMethod must be one of: CASH, MOBILE_MONEY, BANK_TRANSFER, CARD'),
+    .isIn(['CASH', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CARD', 'ONCREDIT'])
+    .withMessage('paymentMethod must be one of: CASH, MOBILE_MONEY, BANK_TRANSFER, CARD, ONCREDIT'),
   body('paymentState')
     .notEmpty().withMessage('paymentState is required')
-    .isIn(['FULL', 'PARTIAL'])
-    .withMessage('paymentState must be FULL or PARTIAL'),
+    .isIn(['FULL', 'PARTIAL', 'ONCREDIT'])
+    .withMessage('paymentState must be FULL, PARTIAL, or ONCREDIT'),
   body('receivedById')
-    .notEmpty().withMessage('receivedById is required')
+    .optional()
     .isUUID().withMessage('receivedById must be a valid UUID'),
   body('verifiedById')
     .optional()
