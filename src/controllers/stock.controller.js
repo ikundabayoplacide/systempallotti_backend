@@ -90,7 +90,11 @@ const updateItem = async (req, res, next) => {
     const item = await StockItem.findByPk(req.params.id);
     if (!item) return error(res, 'Stock item not found.', 404);
 
-    const { itemName, category, unit, description, supplier, unitCost, alarmStock, isActive, type } = req.body;
+    const { itemName, category, unit, description, supplier, unitCost, alarmStock, isActive, type, currentStock } = req.body;
+    if (currentStock !== undefined) {
+      const parsed = parseFloat(currentStock);
+      if (isNaN(parsed) || parsed < 0) return error(res, 'currentStock must be a valid non-negative number.', 400);
+    }
     await item.update({
       ...(itemName !== undefined && { itemName }),
       ...(category !== undefined && { category }),
@@ -101,6 +105,7 @@ const updateItem = async (req, res, next) => {
       ...(alarmStock !== undefined && { alarmStock }),
       ...(isActive !== undefined && { isActive }),
       ...(type !== undefined && { type }),
+      ...(currentStock !== undefined && { currentStock: parseFloat(currentStock) }),
     });
     return success(res, { ...item.toJSON(), stockStatus: item.stockStatus }, 'Stock item updated successfully.');
   } catch (err) {

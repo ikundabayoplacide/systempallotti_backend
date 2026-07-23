@@ -605,7 +605,7 @@ const completeJob = async (req, res, next) => {
       return error(res, 'You can only complete hobe jobs.', 403);
     }
 
-    await job.update({ status: 'completed' });
+    await job.update({ status: 'completed', completedAt: new Date() });
 
     await notify({
       createdById: req.user.id,
@@ -621,6 +621,7 @@ const completeJob = async (req, res, next) => {
       id: job.id,
       jobNumber: job.jobNumber,
       status: 'completed',
+      completedAt: job.completedAt,
     }, 'Job marked as completed.');
   } catch (err) {
     next(err);

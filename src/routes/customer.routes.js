@@ -18,6 +18,6 @@ router.get('/', getAllCustomers);
 router.get('/:id', getCustomerById);
 router.post('/', authorize('ADMIN', 'RECEPTIONIST'), createCustomerValidation, validate, createCustomer);
 router.put('/:id', authorize('ADMIN', 'RECEPTIONIST', 'SALESMANAGER'), updateCustomerValidation, validate, updateCustomer);
-router.delete('/:id', authorize('ADMIN'), deleteCustomer);
+router.delete('/:id', authorize('ADMIN', 'DAF', 'RECEPTIONIST'), deleteCustomer);
 
 module.exports = router;

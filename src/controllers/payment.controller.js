@@ -11,11 +11,12 @@ const { adjustBalance } = require('../utils/fundBalance');
 const paymentIncludes = [
   {
     model: Job, as: 'job', attributes: ['id', 'jobNumber', 'title', 'amount', 'paymentStatus', 'status'],
-    include: [{ model: Customer, as: 'customer', attributes: ['id', 'name', 'phone'] }],
+    required: false,
+    include: [{ model: Customer, as: 'customer', attributes: ['id', 'name', 'phone'], required: false }],
   },
-  { model: User, as: 'recordedBy', attributes: ['id', 'name'] },
-  { model: User, as: 'receivedBy', attributes: ['id', 'name'] },
-  { model: User, as: 'verifiedBy', attributes: ['id', 'name'] },
+  { model: User, as: 'recordedBy', attributes: ['id', 'name'], required: false },
+  { model: User, as: 'receivedBy', attributes: ['id', 'name'], required: false },
+  { model: User, as: 'verifiedBy', attributes: ['id', 'name'], required: false },
 ];
 
 /**
@@ -147,7 +148,16 @@ const getAllPayments = async (req, res, next) => {
       include: paymentIncludes,
     });
 
-    return paginated(res, rows, count, page, limit);
+    const safe = rows.map((p) => {
+      const d = p.toJSON();
+      d.recordedBy = d.recordedBy ?? null;
+      d.receivedBy = d.receivedBy ?? null;
+      d.verifiedBy = d.verifiedBy ?? null;
+      if (d.job) d.job.customer = d.job.customer ?? null;
+      return d;
+    });
+
+    return paginated(res, safe, count, page, limit);
   } catch (err) {
     next(err);
   }
